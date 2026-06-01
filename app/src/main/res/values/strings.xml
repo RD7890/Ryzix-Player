@@ -66,4 +66,13 @@
 
     <!-- Browser activity -->
     <string name="enter_url_hint">Enter URL (HTTP, HTTPS, RTSP, HLS…)</string>
+    <string name="network_stream">Network Stream</string>
+    <string name="enter_url">Please enter a URL</string>
+    <string name="invalid_url">Invalid URL — must start with http, https, rtsp or rtmp</string>
+
+
+    <plurals name="video_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
 </resources>

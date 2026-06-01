@@ -37,7 +37,7 @@ class VideoAdapter(
                 tvResolution.text = video.resolution
 
                 // Load video thumbnail via Coil VideoFrameDecoder
-                imgThumbnail.load(video.uri) {
+                thumbnail.load(video.uri) {
                     videoFrameMillis(1_000)
                     crossfade(true)
                     error(com.ryzix.player.R.drawable.ic_video_placeholder)

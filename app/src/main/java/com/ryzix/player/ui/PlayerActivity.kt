@@ -287,28 +287,40 @@ class PlayerActivity : AppCompatActivity() {
     // ─── GESTURES ────────────────────────────────────────────────────────────
 
     private fun setupGestures() {
-        val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+        val screenWidth = resources.displayMetrics.widthPixels
         gestureListener = PlayerGestureListener(
             context = this,
-            audioManager = audioManager,
-            onDoubleTapLeft = { seek(-10_000L); showSeekOverlay(-10) },
-            onDoubleTapRight = { seek(10_000L); showSeekOverlay(+10) },
-            onBrightnessChange = { level ->
-                showBrightnessIndicator(level)
-                val lp = window.attributes
-                lp.screenBrightness = level / 100f
-                window.attributes = lp
-            },
-            onVolumeChange = { level -> showVolumeIndicator(level) },
+            window = window,
+            screenWidth = screenWidth,
+            onSeekForward = { seek(10_000L); showSeekOverlay(+10) },
+            onSeekBackward = { seek(-10_000L); showSeekOverlay(-10) },
             onSingleTap = {
                 if (!isLocked) {
                     if (binding.controlsContainer.visibility == View.VISIBLE) hideControls()
                     else showControls()
                 }
-            }
+            },
+            onBrightnessChange = { level -> showBrightnessIndicator((level * 100).toInt()) },
+            onVolumeChange = { level -> showVolumeIndicator((level * 100).toInt()) }
         )
         gestureDetector = GestureDetector(this, gestureListener!!)
+        var lastX = 0f
+        var lastY = 0f
         binding.playerView.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    gestureListener?.onTouchBegin(event)
+                    lastX = event.x
+                    lastY = event.y
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.x - lastX
+                    val dy = event.y - lastY
+                    gestureListener?.onTouchMove(event, dx, dy)
+                    lastX = event.x
+                    lastY = event.y
+                }
+            }
             if (!isLocked) gestureDetector.onTouchEvent(event)
             v.performClick()
             true
