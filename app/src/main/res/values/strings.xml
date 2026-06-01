@@ -31,7 +31,7 @@
 
     <!-- Browser -->
     <string name="network_stream">Network Stream</string>
-    <string name="enter_url_hint">Enter video URL (HTTP, HTTPS, RTSP…)</string>
+    <string name="enter_url_hint">Enter video URL (HTTP, HTTPS, RTSP\u2026)</string>
     <string name="play">Play</string>
     <string name="enter_url">Please enter a URL</string>
     <string name="invalid_url">Invalid or unsupported URL</string>

@@ -11,15 +11,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Wake lock to keep screen on during playback -->
+    <!-- Wake lock -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Foreground service for background playback -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-    <!-- Picture-in-Picture -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:name=".App"
@@ -33,25 +30,21 @@
         android:theme="@style/Theme.RyzixPlayer"
         tools:targetApi="31">
 
-        <!-- Splash / Launcher -->
         <activity
             android:name=".ui.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.RyzixPlayer.Splash"
-            android:windowSoftInputMode="stateHidden">
+            android:theme="@style/Theme.RyzixPlayer.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Main browsing screen -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Video player screen -->
         <activity
             android:name=".ui.PlayerActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
@@ -60,7 +53,6 @@
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:theme="@style/Theme.RyzixPlayer.Player">
-            <!-- Open video files from other apps -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -70,19 +62,17 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="http" android:mimeType="video/*" />
-                <data android:scheme="https" android:mimeType="video/*" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
                 <data android:scheme="rtsp" />
             </intent-filter>
         </activity>
 
-        <!-- File browser / network stream activity -->
         <activity
             android:name=".ui.BrowserActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Background playback service -->
         <service
             android:name=".service.PlayerService"
             android:exported="true"

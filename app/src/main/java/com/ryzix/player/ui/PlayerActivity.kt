@@ -1,7 +1,6 @@
 package com.ryzix.player.ui
 
 import android.app.PictureInPictureParams
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
@@ -11,10 +10,7 @@ import android.util.Rational
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import android.view.WindowInsetsController
-import android.widget.ImageButton
 import android.widget.SeekBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
@@ -25,7 +21,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
@@ -92,77 +87,73 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.tvTitle.text = currentTitle.substringBeforeLast(".")
 
-        setupPlayer()
-        setupControls()
-        setupGestures()
-        setupObservers()
-
-        // Auto-detect and load subtitle
+        // Auto-detect subtitle file
         val subPath = MediaUtils.findSubtitleFile(currentPath)
         if (subPath != null) {
             Toast.makeText(this, getString(R.string.subtitle_loaded), Toast.LENGTH_SHORT).show()
         }
+
+        setupPlayer()
+        setupControls()
+        setupGestures()
+        setupObservers()
     }
 
     private fun setupPlayer() {
-        player = ExoPlayer.Builder(this)
-            .build()
-            .also { exo ->
-                binding.playerView.player = exo
-                binding.playerView.useController = false  // We use custom controls
+        player = ExoPlayer.Builder(this).build().also { exo ->
+            binding.playerView.player = exo
+            binding.playerView.useController = false
 
-                lifecycleScope.launch {
-                    val resumePos = viewModel.getResumePosition()
-                    val mediaItem = MediaItem.fromUri(Uri.parse(currentUri))
-                    exo.setMediaItem(mediaItem, resumePos)
-                    exo.prepare()
-                    exo.playWhenReady = true
-                }
-
-                exo.addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(state: Int) {
-                        updatePlayPauseButton(exo.isPlaying)
-                        if (state == Player.STATE_READY) {
-                            totalDuration = exo.duration
-                            viewModel.currentDuration = totalDuration
-                            binding.seekBar.max = totalDuration.toInt().coerceAtLeast(1)
-                            binding.tvDuration.text = formatDuration(totalDuration)
-                            viewModel.startPositionTracking(exo)
-                        }
-                        if (state == Player.STATE_ENDED) {
-                            viewModel.savePosition(0L)
-                            viewModel.showControls()
-                        }
-                    }
-
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        updatePlayPauseButton(isPlaying)
-                    }
-
-                    override fun onVideoSizeChanged(videoSize: VideoSize) {
-                        if (videoSize.width > videoSize.height) {
-                            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        }
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        Toast.makeText(
-                            this@PlayerActivity,
-                            "${getString(R.string.playback_error)}: ${error.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                })
-
-                // Apply saved playback speed
-                viewModel.playbackSpeed.observe(this) { speed ->
-                    exo.setPlaybackSpeed(speed)
-                }
+            lifecycleScope.launch {
+                val resumePos = viewModel.getResumePosition()
+                val mediaItem = MediaItem.fromUri(Uri.parse(currentUri))
+                exo.setMediaItem(mediaItem, resumePos)
+                exo.prepare()
+                exo.playWhenReady = true
             }
+
+            exo.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    updatePlayPauseButton(exo.isPlaying)
+                    if (state == Player.STATE_READY) {
+                        totalDuration = exo.duration
+                        viewModel.currentDuration = totalDuration
+                        binding.seekBar.max = totalDuration.toInt().coerceAtLeast(1)
+                        binding.tvDuration.text = formatDuration(totalDuration)
+                        viewModel.startPositionTracking(exo)
+                    }
+                    if (state == Player.STATE_ENDED) {
+                        viewModel.savePosition(0L)
+                        viewModel.showControls()
+                    }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    updatePlayPauseButton(isPlaying)
+                }
+
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    if (videoSize.width > videoSize.height) {
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    Toast.makeText(
+                        this@PlayerActivity,
+                        "${getString(R.string.playback_error)}: ${error.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            })
+
+            viewModel.playbackSpeed.observe(this) { speed ->
+                exo.setPlaybackSpeed(speed)
+            }
+        }
     }
 
     private fun setupControls() {
-        // Play/pause
         binding.btnPlayPause.setOnClickListener {
             player?.let {
                 if (it.isPlaying) it.pause() else it.play()
@@ -170,21 +161,18 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        // Rewind 10s
         binding.btnRewind.setOnClickListener {
-            player?.seekTo((player!!.currentPosition - 10_000).coerceAtLeast(0))
+            player?.seekTo((player!!.currentPosition - 10_000L).coerceAtLeast(0L))
             viewModel.showControls()
             showSeekFeedback(-10)
         }
 
-        // Forward 10s
         binding.btnForward.setOnClickListener {
-            player?.seekTo((player!!.currentPosition + 10_000).coerceAtMost(totalDuration))
+            player?.seekTo((player!!.currentPosition + 10_000L).coerceAtMost(totalDuration))
             viewModel.showControls()
             showSeekFeedback(10)
         }
 
-        // Seekbar
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
                 if (fromUser) binding.tvPosition.text = formatDuration(progress.toLong())
@@ -196,10 +184,8 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        // Lock button
         binding.btnLock.setOnClickListener { viewModel.toggleLock() }
 
-        // Aspect ratio cycle
         binding.btnAspect.setOnClickListener {
             val next = viewModel.nextAspectRatio()
             binding.playerView.resizeMode = ASPECT_MODES[next % ASPECT_MODES.size]
@@ -207,22 +193,18 @@ class PlayerActivity : AppCompatActivity() {
             Toast.makeText(this, labels[next % labels.size], Toast.LENGTH_SHORT).show()
         }
 
-        // Playback speed
         binding.btnSpeed.setOnClickListener { showSpeedDialog() }
 
-        // PiP
         binding.btnPip.setOnClickListener { enterPiP() }
 
-        // Rotate
         binding.btnRotate.setOnClickListener {
-            requestedOrientation = if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            } else {
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            }
+            requestedOrientation =
+                if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else
+                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
 
-        // Back
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
@@ -233,43 +215,40 @@ class PlayerActivity : AppCompatActivity() {
             window = window,
             screenWidth = displayMetrics.widthPixels,
             onSeekForward = {
-                player?.seekTo((player!!.currentPosition + 10_000).coerceAtMost(totalDuration))
+                player?.seekTo((player!!.currentPosition + 10_000L).coerceAtMost(totalDuration))
                 showSeekFeedback(10)
             },
             onSeekBackward = {
-                player?.seekTo((player!!.currentPosition - 10_000).coerceAtLeast(0))
+                player?.seekTo((player!!.currentPosition - 10_000L).coerceAtLeast(0L))
                 showSeekFeedback(-10)
             },
             onSingleTap = { viewModel.toggleControls() },
             onBrightnessChange = { pct ->
                 binding.tvBrightnessIndicator.text = "${(pct * 100).toInt()}%"
                 binding.layoutBrightnessIndicator.visibility = View.VISIBLE
-                binding.layoutBrightnessIndicator.postDelayed({
-                    binding.layoutBrightnessIndicator.visibility = View.GONE
-                }, 1500)
+                binding.layoutBrightnessIndicator.postDelayed(
+                    { binding.layoutBrightnessIndicator.visibility = View.GONE }, 1500
+                )
             },
             onVolumeChange = { pct ->
                 binding.tvVolumeIndicator.text = "${(pct * 100).toInt()}%"
                 binding.layoutVolumeIndicator.visibility = View.VISIBLE
-                binding.layoutVolumeIndicator.postDelayed({
-                    binding.layoutVolumeIndicator.visibility = View.GONE
-                }, 1500)
+                binding.layoutVolumeIndicator.postDelayed(
+                    { binding.layoutVolumeIndicator.visibility = View.GONE }, 1500
+                )
             }
         )
 
         gestureDetector = GestureDetector(this, gestureListener!!)
 
         binding.playerView.setOnTouchListener { _, event ->
-            if (viewModel.isLocked.value == true) {
-                // Only allow lock button touch
-                return@setOnTouchListener false
-            }
+            if (viewModel.isLocked.value == true) return@setOnTouchListener false
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> gestureListener?.onTouchBegin(event)
                 MotionEvent.ACTION_MOVE -> {
-                    val dx = event.x - (event.historySize.takeIf { it > 0 }?.let { event.getHistoricalX(0) } ?: event.x)
-                    val dy = event.y - (event.historySize.takeIf { it > 0 }?.let { event.getHistoricalY(0) } ?: event.y)
-                    gestureListener?.onTouchMove(event, dx, dy)
+                    val prevX = if (event.historySize > 0) event.getHistoricalX(0) else event.x
+                    val prevY = if (event.historySize > 0) event.getHistoricalY(0) else event.y
+                    gestureListener?.onTouchMove(event, event.x - prevX, event.y - prevY)
                 }
             }
             gestureDetector.onTouchEvent(event)
@@ -286,19 +265,20 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         viewModel.showControls.observe(this) { show ->
-            val visibility = if (show) View.VISIBLE else View.GONE
-            binding.controlsTop.visibility = visibility
-            binding.controlsBottom.visibility = visibility
-            binding.controlsCenter.visibility = visibility
+            val vis = if (show) View.VISIBLE else View.GONE
+            binding.controlsTop.visibility = vis
+            binding.controlsBottom.visibility = vis
+            binding.controlsCenter.visibility = vis
         }
 
         viewModel.isLocked.observe(this) { locked ->
             binding.btnLock.setImageResource(
                 if (locked) R.drawable.ic_lock else R.drawable.ic_lock_open
             )
-            binding.controlsTop.visibility = if (locked) View.GONE else View.VISIBLE
-            binding.controlsBottom.visibility = if (locked) View.GONE else View.VISIBLE
-            binding.controlsCenter.visibility = if (locked) View.GONE else View.VISIBLE
+            val vis = if (locked) View.GONE else View.VISIBLE
+            binding.controlsTop.visibility = vis
+            binding.controlsBottom.visibility = vis
+            binding.controlsCenter.visibility = vis
         }
     }
 
@@ -387,8 +367,8 @@ class PlayerActivity : AppCompatActivity() {
         newConfig: Configuration
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        val controlsVisible = if (isInPictureInPictureMode) View.GONE else View.VISIBLE
-        binding.controlsTop.visibility = controlsVisible
-        binding.controlsBottom.visibility = controlsVisible
+        val vis = if (isInPictureInPictureMode) View.GONE else View.VISIBLE
+        binding.controlsTop.visibility = vis
+        binding.controlsBottom.visibility = vis
     }
 }
