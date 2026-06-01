@@ -42,7 +42,7 @@
         <item name="elevation">8dp</item>
     </style>
 
-    <style name="Widget.RyzixPlayer.BottomNavigation.Indicator" parent="Widget.MaterialComponents.BottomNavigationView.ActiveIndicator">
+    <style name="Widget.RyzixPlayer.BottomNavigation.Indicator">
         <item name="android:color">@color/bottom_nav_indicator</item>
     </style>
 
