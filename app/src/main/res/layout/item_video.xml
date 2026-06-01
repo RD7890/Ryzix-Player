@@ -6,10 +6,11 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
     android:layout_marginVertical="4dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:rippleColor="@color/accent">
+    app:cardBackgroundColor="@color/card_bg"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/card_stroke"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,20 +19,42 @@
         android:orientation="horizontal"
         android:padding="10dp">
 
-        <!-- Thumbnail -->
-        <ImageView
-            android:id="@+id/imgThumbnail"
-            android:layout_width="100dp"
-            android:layout_height="64dp"
-            android:background="@color/surface_variant"
-            android:contentDescription="Video thumbnail"
-            android:scaleType="centerCrop" />
+        <!-- Thumbnail with duration badge -->
+        <FrameLayout
+            android:layout_width="108dp"
+            android:layout_height="68dp">
 
-        <!-- Text info -->
+            <ImageView
+                android:id="@+id/thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_video_placeholder"
+                android:background="#1A000000" />
+
+            <!-- Duration pill bottom-right -->
+            <TextView
+                android:id="@+id/tvDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_pill"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:text="0:00"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+        <!-- Title + metadata -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -42,45 +65,39 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:textColor="@color/on_surface"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_tag"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp"
-                    android:textColor="@color/on_primary"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/tvResolution"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:textColor="@color/on_surface_variant"
-                    android:textSize="11sp" />
-
-            </LinearLayout>
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:lineSpacingMultiplier="1.1" />
 
             <TextView
                 android:id="@+id/tvSize"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="4dp"
                 android:textColor="@color/on_surface_variant"
                 android:textSize="11sp" />
 
+            <TextView
+                android:id="@+id/tvResolution"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/accent"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
         </LinearLayout>
+
+        <!-- 3-dot overflow -->
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_chevron_right"
+            android:tint="@color/on_surface_variant"
+            android:contentDescription="More options" />
 
     </LinearLayout>
 

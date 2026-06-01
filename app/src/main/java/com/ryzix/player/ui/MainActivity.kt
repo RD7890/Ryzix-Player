@@ -5,8 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -14,12 +13,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.tabs.TabLayout
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ryzix.player.R
 import com.ryzix.player.adapter.FolderAdapter
 import com.ryzix.player.adapter.VideoAdapter
 import com.ryzix.player.databinding.ActivityMainBinding
 import com.ryzix.player.model.VideoItem
+import com.ryzix.player.utils.PreferenceUtils
 import com.ryzix.player.viewmodel.MediaViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -33,12 +34,8 @@ class MainActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val granted = permissions.values.any { it }
-        if (granted) {
-            viewModel.loadVideos()
-        } else {
-            Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show()
-        }
+        if (permissions.values.any { it }) viewModel.loadVideos()
+        else Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,10 +43,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
-
         setupAdapters()
-        setupTabs()
+        setupBottomNav()
+        setupSearch()
+        setupToolbarActions()
         setupObservers()
         checkPermissions()
     }
@@ -59,53 +56,132 @@ class MainActivity : AppCompatActivity() {
             onVideoClick = { video -> openPlayer(video) },
             onVideoLongClick = { video -> showVideoOptions(video) }
         )
-
         folderAdapter = FolderAdapter(
             onFolderClick = { folder ->
                 viewModel.openFolder(folder.id)
-                binding.tabs.getTabAt(0)?.select()
+                binding.bottomNav.selectedItemId = R.id.nav_local
             }
         )
-
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = videoAdapter
             setHasFixedSize(true)
+            itemAnimator?.changeDuration = 150
         }
     }
 
-    private fun setupTabs() {
-        binding.tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                when (tab.position) {
-                    0 -> {
-                        binding.recyclerView.adapter = videoAdapter
-                        viewModel.clearFolderFilter()
-                    }
-                    1 -> binding.recyclerView.adapter = folderAdapter
-                    2 -> showHistory()
+    private fun setupBottomNav() {
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_local -> {
+                    binding.recyclerView.adapter = videoAdapter
+                    viewModel.clearFolderFilter()
+                    viewModel.filteredVideos.value?.let { videoAdapter.submitList(it) }
+                    showEmpty(videoAdapter.currentList.isEmpty(), getString(R.string.no_videos))
+                    true
                 }
+                R.id.nav_folders -> {
+                    binding.recyclerView.adapter = folderAdapter
+                    viewModel.folders.value?.let { folderAdapter.submitList(it) }
+                    showEmpty(folderAdapter.currentList.isEmpty(), getString(R.string.no_folders))
+                    true
+                }
+                R.id.nav_search -> {
+                    binding.recyclerView.adapter = videoAdapter
+                    binding.searchView.requestFocus()
+                    true
+                }
+                R.id.nav_history -> {
+                    showHistory()
+                    true
+                }
+                else -> false
             }
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+        }
+        binding.bottomNav.selectedItemId = R.id.nav_local
+    }
+
+    private fun setupSearch() {
+        val sv = binding.searchView
+        sv.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+            override fun onQueryTextChange(query: String?): Boolean {
+                val q = query?.trim() ?: ""
+                if (q.isBlank()) {
+                    viewModel.filteredVideos.value?.let { videoAdapter.submitList(it) }
+                    showEmpty(videoAdapter.currentList.isEmpty(), getString(R.string.no_videos))
+                } else {
+                    viewModel.search(q)
+                    val results = viewModel.searchResults.value ?: emptyList()
+                    videoAdapter.submitList(results)
+                    showEmpty(results.isEmpty(), getString(R.string.no_results, q))
+                }
+                return true
+            }
         })
+    }
+
+    private fun setupToolbarActions() {
+        binding.btnSort.setOnClickListener {
+            val options = arrayOf(
+                getString(R.string.sort_name),
+                getString(R.string.sort_date),
+                getString(R.string.sort_size),
+                getString(R.string.sort_duration)
+            )
+            MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.sort_by))
+                .setItems(options) { _, which ->
+                    val sortKey = when (which) {
+                        0 -> PreferenceUtils.SORT_BY_NAME
+                        1 -> PreferenceUtils.SORT_BY_DATE
+                        2 -> PreferenceUtils.SORT_BY_SIZE
+                        else -> PreferenceUtils.SORT_BY_DURATION
+                    }
+                    viewModel.sortBy(sortKey)
+                }
+                .show()
+        }
+
+        binding.btnSettings.setOnClickListener {
+            showSettingsDialog()
+        }
     }
 
     private fun setupObservers() {
         viewModel.filteredVideos.observe(this) { videos ->
-            videoAdapter.submitList(videos)
-            binding.tvEmpty.visibility =
-                if (videos.isEmpty() && !(viewModel.isLoading.value ?: false))
-                    android.view.View.VISIBLE else android.view.View.GONE
+            if (binding.bottomNav.selectedItemId == R.id.nav_local ||
+                binding.bottomNav.selectedItemId == R.id.nav_search) {
+                videoAdapter.submitList(videos)
+                showEmpty(videos.isEmpty() && viewModel.isLoading.value != true,
+                    getString(R.string.no_videos))
+            }
         }
-
         viewModel.folders.observe(this) { folders ->
-            folderAdapter.submitList(folders)
+            if (binding.bottomNav.selectedItemId == R.id.nav_folders) {
+                folderAdapter.submitList(folders)
+                showEmpty(folders.isEmpty(), getString(R.string.no_folders))
+            }
         }
-
         viewModel.isLoading.observe(this) { loading ->
-            binding.progressBar.visibility =
-                if (loading) android.view.View.VISIBLE else android.view.View.GONE
+            binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun showEmpty(empty: Boolean, message: String) {
+        binding.layoutEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+        binding.tvEmpty.text = message
+        binding.recyclerView.visibility = if (empty) View.GONE else View.VISIBLE
+    }
+
+    private fun showHistory() {
+        binding.recyclerView.adapter = videoAdapter
+        viewModel.recentHistory.observe(this) { historyList ->
+            val historyVideos = historyList.mapNotNull { history ->
+                viewModel.allVideos.value?.find { it.path == history.videoPath }
+            }
+            videoAdapter.submitList(historyVideos)
+            showEmpty(historyVideos.isEmpty(), getString(R.string.no_history))
         }
     }
 
@@ -115,26 +191,19 @@ class MainActivity : AppCompatActivity() {
         } else {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-
         val allGranted = permissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
-
-        if (allGranted) {
-            viewModel.loadVideos()
-        } else {
-            permissionLauncher.launch(permissions)
-        }
+        if (allGranted) viewModel.loadVideos() else permissionLauncher.launch(permissions)
     }
 
     private fun openPlayer(video: VideoItem) {
-        val intent = Intent(this, PlayerActivity::class.java).apply {
+        startActivity(Intent(this, PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_URI, video.uri.toString())
             putExtra(PlayerActivity.EXTRA_TITLE, video.displayName)
             putExtra(PlayerActivity.EXTRA_PATH, video.path)
             putExtra(PlayerActivity.EXTRA_DURATION, video.duration)
-        }
-        startActivity(intent)
+        })
     }
 
     private fun showVideoOptions(video: VideoItem) {
@@ -143,7 +212,7 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.share),
             getString(R.string.delete_from_history)
         )
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(video.displayName.substringBeforeLast("."))
             .setItems(options) { _, which ->
                 when (which) {
@@ -156,58 +225,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareVideo(video: VideoItem) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
             type = "video/*"
             putExtra(Intent.EXTRA_STREAM, video.uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        startActivity(Intent.createChooser(intent, getString(R.string.share_via)))
+        }, getString(R.string.share_via)))
     }
 
-    private fun showHistory() {
-        // History tab — observe recentHistory and show in recyclerView
-        viewModel.recentHistory.observe(this) { historyList ->
-            val historyVideos = historyList.mapNotNull { history ->
-                viewModel.allVideos.value?.find { it.path == history.videoPath }
+    private fun showSettingsDialog() {
+        val themes = arrayOf(
+            getString(R.string.theme_system),
+            getString(R.string.theme_light),
+            getString(R.string.theme_dark)
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.theme))
+            .setItems(themes) { _, which ->
+                val mode = when (which) {
+                    1 -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+                    2 -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+                    else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                }
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(mode)
             }
-            videoAdapter.submitList(historyVideos)
-        }
-        binding.recyclerView.adapter = videoAdapter
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem?.actionView as? SearchView
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(query: String?): Boolean {
-                viewModel.search(query ?: "")
-                val results = viewModel.searchResults.value ?: emptyList()
-                if (query?.isNotBlank() == true) videoAdapter.submitList(results)
-                else viewModel.filteredVideos.value?.let { videoAdapter.submitList(it) }
-                return true
-            }
-        })
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_sort_name -> { viewModel.sortBy(com.ryzix.player.utils.PreferenceUtils.SORT_BY_NAME); true }
-            R.id.action_sort_date -> { viewModel.sortBy(com.ryzix.player.utils.PreferenceUtils.SORT_BY_DATE); true }
-            R.id.action_sort_size -> { viewModel.sortBy(com.ryzix.player.utils.PreferenceUtils.SORT_BY_SIZE); true }
-            R.id.action_sort_duration -> { viewModel.sortBy(com.ryzix.player.utils.PreferenceUtils.SORT_BY_DURATION); true }
-            R.id.action_network_stream -> {
-                startActivity(Intent(this, BrowserActivity::class.java))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+            .show()
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.loadVideos()
+        if (binding.bottomNav.selectedItemId == R.id.nav_local) viewModel.loadVideos()
     }
 }

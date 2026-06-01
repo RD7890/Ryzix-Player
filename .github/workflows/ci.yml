@@ -1,0 +1,123 @@
+name: Ryzix Player CI
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build APKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10.2
+
+      - name: Download Gradle wrapper jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL -o gradle/wrapper/gradle-wrapper.jar \
+            "https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar" || \
+          curl -sL -o gradle/wrapper/gradle-wrapper.jar \
+            "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Generate debug keystore (for release signing)
+        run: |
+          keytool -genkeypair \
+            -alias ryzix-key \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -keystore ${{ github.workspace }}/ryzix-signing.jks \
+            -storepass ryzix1234 \
+            -keypass ryzix1234 \
+            -dname "CN=Ryzix Player, OU=Dev, O=RD7890, L=IN, S=IN, C=IN" \
+            -noprompt
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build release APK (R8 + signed)
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/ryzix-signing.jks
+          KEYSTORE_PASSWORD: ryzix1234
+          KEY_ALIAS: ryzix-key
+          KEY_PASSWORD: ryzix1234
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APKs
+        run: |
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             app/build/outputs/apk/debug/Ryzix-Player-${VERSION}-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/apk/release/Ryzix-Player-${VERSION}-release.apk
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ryzix-Player-debug
+          path: app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
+          retention-days: 30
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ryzix-Player-release
+          path: app/build/outputs/apk/release/Ryzix-Player-*-release.apk
+          retention-days: 30
+
+      - name: Run unit tests
+        run: ./gradlew test --no-daemon
+
+      - name: Publish GitHub Release with APKs
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Ryzix Player ${{ github.ref_name }}"
+          body: |
+            ## Ryzix Player ${{ github.ref_name }}
+
+            **Automated release — R8 minified, signed**
+
+            ### What's included
+            - `Ryzix-Player-*-release.apk` — optimised release build (install this)
+            - `Ryzix-Player-*-debug.apk` — debug build with logging
+
+            ### Install
+            1. Download `*-release.apk` below
+            2. Transfer to your phone
+            3. Open it → tap **Install** (allow unknown sources if prompted)
+
+            ### Requirements
+            Android 7.0 (API 24) or higher
+
+            ---
+            Branch: `${{ github.ref_name }}` · Commit: `${{ github.sha }}` · Run: #${{ github.run_number }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
+          files: |
+            app/build/outputs/apk/release/Ryzix-Player-*-release.apk
+            app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

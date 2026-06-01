@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1A1A2E</color>
-    <color name="primary_dark">#16213E</color>
-    <color name="accent">#E94560</color>
-    <color name="accent_dark">#C73652</color>
-    <color name="background">#0F3460</color>
-    <color name="surface">#1A1A2E</color>
-    <color name="surface_variant">#222244</color>
+    <!-- Light theme base colors -->
+    <color name="primary">#C62828</color>
+    <color name="primary_dark">#B71C1C</color>
+    <color name="accent">#E53935</color>
+    <color name="accent_dark">#C62828</color>
+    <color name="background">#F2F2F2</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F5F5F5</color>
+    <color name="surface_elevated">#FFFFFF</color>
     <color name="on_primary">#FFFFFF</color>
-    <color name="on_surface">#FFFFFFFF</color>
-    <color name="on_surface_variant">#CCCCCC</color>
-    <color name="divider">#33FFFFFF</color>
+    <color name="on_surface">#1C1B1F</color>
+    <color name="on_surface_variant">#49454F</color>
+    <color name="divider">#E0E0E0</color>
+    <color name="search_bg">#FFFFFF</color>
+    <color name="search_text">#1C1B1F</color>
+    <color name="search_hint">#79747E</color>
+    <color name="toolbar_bg">#C62828</color>
+    <color name="bottom_nav_bg">#FFFFFF</color>
+    <color name="bottom_nav_indicator">#FFDAD6</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="card_stroke">#E0E0E0</color>
 
-    <!-- Player overlay -->
+    <!-- Player overlay (always dark — video is black bg) -->
     <color name="player_overlay">#99000000</color>
     <color name="player_controls_bg">#CC000000</color>
-    <color name="seek_bar_progress">#E94560</color>
-    <color name="seek_bar_thumb">#E94560</color>
-    <color name="seek_bar_secondary">#66E94560</color>
+    <color name="seek_bar_progress">#E53935</color>
+    <color name="seek_bar_thumb">#E53935</color>
+    <color name="seek_bar_secondary">#66E53935</color>
     <color name="indicator_bg">#CC000000</color>
 
     <!-- Status colors -->
     <color name="green">#4CAF50</color>
     <color name="red">#F44336</color>
     <color name="yellow">#FFC107</color>
-
-    <!-- Transparent -->
     <color name="transparent">#00000000</color>
 </resources>
