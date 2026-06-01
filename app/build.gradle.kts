@@ -97,8 +97,9 @@ dependencies {
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
 
-    // Coil (thumbnail loading)
+    // Coil — image loading + video frame thumbnails
     implementation(libs.coil)
+    implementation(libs.coil.video)
 
     // Coroutines
     implementation(libs.coroutines.android)

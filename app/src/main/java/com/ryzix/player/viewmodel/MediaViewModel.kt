@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.ryzix.player.db.AppDatabase
 import com.ryzix.player.db.WatchHistory
@@ -37,7 +38,8 @@ class MediaViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
-    val recentHistory = dao.getRecentHistory(20)
+    // Converted from Flow to LiveData so Activities can use .observe()
+    val recentHistory: LiveData<List<WatchHistory>> = dao.getRecentHistory(20).asLiveData()
 
     private var currentFolderId: Long = -1L
     private var currentSearchQuery: String = ""

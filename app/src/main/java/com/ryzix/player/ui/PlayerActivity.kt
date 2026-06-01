@@ -29,8 +29,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.ryzix.player.R
 import com.ryzix.player.databinding.ActivityPlayerBinding
-import com.ryzix.player.utils.GestureUtils
 import com.ryzix.player.utils.MediaUtils
+import com.ryzix.player.utils.PlayerGestureListener
 import com.ryzix.player.viewmodel.PlayerViewModel
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -58,7 +58,7 @@ class PlayerActivity : AppCompatActivity() {
     private var player: ExoPlayer? = null
 
     private lateinit var gestureDetector: GestureDetector
-    private var gestureListener: GestureUtils.PlayerGestureListener? = null
+    private var gestureListener: PlayerGestureListener? = null
 
     private var isSeekbarTracking = false
     private var currentUri: String = ""
@@ -87,7 +87,6 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.tvTitle.text = currentTitle.substringBeforeLast(".")
 
-        // Auto-detect subtitle file
         val subPath = MediaUtils.findSubtitleFile(currentPath)
         if (subPath != null) {
             Toast.makeText(this, getString(R.string.subtitle_loaded), Toast.LENGTH_SHORT).show()
@@ -210,7 +209,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun setupGestures() {
         val displayMetrics = resources.displayMetrics
-        gestureListener = GestureUtils.PlayerGestureListener(
+        gestureListener = PlayerGestureListener(
             context = this,
             window = window,
             screenWidth = displayMetrics.widthPixels,
