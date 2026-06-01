@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ryzix Player</string>
+
+    <!-- Tabs -->
+    <string name="tab_videos">Videos</string>
+    <string name="tab_folders">Folders</string>
+    <string name="tab_history">History</string>
+
+    <!-- Menu -->
+    <string name="action_search">Search</string>
+    <string name="action_sort">Sort</string>
+    <string name="sort_by_name">By Name</string>
+    <string name="sort_by_date">By Date</string>
+    <string name="sort_by_size">By Size</string>
+    <string name="sort_by_duration">By Duration</string>
+    <string name="action_network_stream">Network Stream</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Player -->
+    <string name="playback_speed">Playback Speed</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
+    <string name="audio_track">Audio Track</string>
+    <string name="subtitle">Subtitles</string>
+    <string name="subtitle_loaded">Subtitle file detected</string>
+    <string name="lock_screen">Lock screen</string>
+    <string name="unlock_screen">Unlock screen</string>
+    <string name="pip_mode">Picture in Picture</string>
+    <string name="playback_error">Playback error</string>
+    <string name="rotate">Rotate</string>
+
+    <!-- Browser -->
+    <string name="network_stream">Network Stream</string>
+    <string name="enter_url_hint">Enter video URL (HTTP, HTTPS, RTSP…)</string>
+    <string name="play">Play</string>
+    <string name="enter_url">Please enter a URL</string>
+    <string name="invalid_url">Invalid or unsupported URL</string>
+
+    <!-- General -->
+    <string name="permission_denied">Storage permission is required to browse videos</string>
+    <string name="no_videos">No videos found</string>
+    <string name="share">Share</string>
+    <string name="share_via">Share via</string>
+    <string name="delete_from_history">Remove from history</string>
+    <string name="clear_history">Clear history</string>
+    <string name="history_empty">No watch history yet</string>
+
+    <!-- Aspect ratio labels -->
+    <string-array name="aspect_ratio_labels">
+        <item>Fit</item>
+        <item>Fill</item>
+        <item>Zoom</item>
+        <item>16:9</item>
+        <item>4:3</item>
+    </string-array>
+
+    <!-- Plurals -->
+    <plurals name="video_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+</resources>

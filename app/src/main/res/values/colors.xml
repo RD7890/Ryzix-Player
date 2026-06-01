@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1A1A2E</color>
+    <color name="primary_dark">#16213E</color>
+    <color name="accent">#E94560</color>
+    <color name="accent_dark">#C73652</color>
+    <color name="background">#0F3460</color>
+    <color name="surface">#1A1A2E</color>
+    <color name="surface_variant">#222244</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_surface">#FFFFFFFF</color>
+    <color name="on_surface_variant">#CCCCCC</color>
+    <color name="divider">#33FFFFFF</color>
+
+    <!-- Player overlay -->
+    <color name="player_overlay">#99000000</color>
+    <color name="player_controls_bg">#CC000000</color>
+    <color name="seek_bar_progress">#E94560</color>
+    <color name="seek_bar_thumb">#E94560</color>
+    <color name="seek_bar_secondary">#66E94560</color>
+    <color name="indicator_bg">#CC000000</color>
+
+    <!-- Status colors -->
+    <color name="green">#4CAF50</color>
+    <color name="red">#F44336</color>
+    <color name="yellow">#FFC107</color>
+
+    <!-- Transparent -->
+    <color name="transparent">#00000000</color>
+</resources>
