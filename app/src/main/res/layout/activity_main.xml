@@ -151,8 +151,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/bottom_nav_bg"
-        app:itemIconTint="@drawable/bottom_nav_item_color"
-        app:itemTextColor="@drawable/bottom_nav_item_color"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu"
         app:elevation="8dp" />

@@ -53,4 +53,17 @@
     <string name="nav_folders">Folders</string>
     <string name="nav_search">Search</string>
     <string name="nav_history">History</string>
+
+    <!-- Menu actions -->
+    <string name="action_search">Search</string>
+    <string name="action_sort">Sort</string>
+    <string name="sort_by_name">By name</string>
+    <string name="sort_by_date">By date</string>
+    <string name="sort_by_size">By size</string>
+    <string name="sort_by_duration">By duration</string>
+    <string name="action_network_stream">Network stream</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Browser activity -->
+    <string name="enter_url_hint">Enter URL (HTTP, HTTPS, RTSP, HLS…)</string>
 </resources>
