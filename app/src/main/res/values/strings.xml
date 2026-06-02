@@ -1,65 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-  <resources>
-      <string name="app_name">Ryzix Player</string>
-      <string name="tab_videos">Videos</string>
-      <string name="tab_folders">Folders</string>
-      <string name="tab_history">History</string>
-      <string name="tab_search">Search</string>
-      <string name="no_videos">No videos found</string>
-      <string name="no_folders">No folders found</string>
-      <string name="no_history">No watch history yet</string>
-      <string name="no_results">No results for "%1$s"</string>
-      <string name="permission_denied">Storage permission required to browse videos</string>
-      <string name="search_hint">Search videos…</string>
-      <string name="subtitle_loaded">Subtitle file detected</string>
-      <string name="playback_error">Playback error</string>
-      <string name="play">Play</string>
-      <string name="share">Share</string>
-      <string name="delete_from_history">Remove from history</string>
-      <string name="share_via">Share via</string>
-      <string name="open_network_stream">Open network stream</string>
-      <string name="network_stream_hint">Paste URL (HTTP, HTTPS, RTSP, HLS…)</string>
-      <string name="open">Open</string>
-      <string name="cancel">Cancel</string>
-      <string name="sort_by">Sort by</string>
-      <string name="sort_name">Name</string>
-      <string name="sort_date">Date</string>
-      <string name="sort_size">Size</string>
-      <string name="sort_duration">Duration</string>
-      <string name="settings">Settings</string>
-      <string name="theme">Theme</string>
-      <string name="theme_system">Follow system</string>
-      <string name="theme_light">Light</string>
-      <string name="theme_dark">Dark</string>
-      <string name="background_play">Background playback</string>
-      <string name="resume_playback">Resume where I left off</string>
-      <string name="about">About</string>
-      <string name="version">Version</string>
-      <string name="locked">Screen locked — swipe up to unlock</string>
-      <string name="speed_label">Speed: %1$s×</string>
-      <string name="aspect_fit">Fit</string>
-      <string name="aspect_fill">Fill</string>
-      <string name="aspect_zoom">Zoom</string>
-      <string name="aspect_16_9">16:9</string>
-      <string name="aspect_4_3">4:3</string>
-      <string name="nav_local">Local</string>
-      <string name="nav_folders">Folders</string>
-      <string name="nav_search">Search</string>
-      <string name="nav_history">History</string>
-      <string name="action_search">Search</string>
-      <string name="action_sort">Sort</string>
-      <string name="sort_by_name">By name</string>
-      <string name="sort_by_date">By date</string>
-      <string name="sort_by_size">By size</string>
-      <string name="sort_by_duration">By duration</string>
-      <string name="action_network_stream">Network stream</string>
-      <string name="action_settings">Settings</string>
-      <string name="enter_url_hint">Enter URL (HTTP, HTTPS, RTSP, HLS…)</string>
-      <string name="network_stream">Network Stream</string>
-      <string name="enter_url">Please enter a URL</string>
-      <string name="invalid_url">Invalid URL — must start with http, https, rtsp or rtmp</string>
-      <plurals name="video_count">
-          <item quantity="one">%d video</item>
-          <item quantity="other">%d videos</item>
-      </plurals>
-  </resources>
+<resources>
+  <string name="app_name">Ryzix Player</string>
+  <!-- Nav tabs -->
+  <string name="nav_local">Videos</string>
+  <string name="nav_folders">Folders</string>
+  <string name="nav_music">Music</string>
+  <string name="nav_history">History</string>
+  <!-- Tab labels (duplicate for legacy references) -->
+  <string name="tab_videos">Videos</string>
+  <string name="tab_folders">Folders</string>
+  <string name="tab_history">History</string>
+  <string name="tab_search">Search</string>
+  <!-- Empty states -->
+  <string name="no_videos">No videos found</string>
+  <string name="no_folders">No folders found</string>
+  <string name="no_history">No watch history yet</string>
+  <string name="no_music">No music found</string>
+  <string name="no_results">No results for "%1$s"</string>
+  <!-- General -->
+  <string name="permission_denied">Storage permission required to browse media</string>
+  <string name="search_hint">Search videos…</string>
+  <string name="search_music_hint">Search music…</string>
+  <string name="subtitle_loaded">Subtitle file detected</string>
+  <string name="playback_error">Playback error</string>
+  <string name="play">Play</string>
+  <string name="share">Share</string>
+  <string name="delete_from_history">Remove from history</string>
+  <string name="share_via">Share via</string>
+  <string name="open_network_stream">Open network stream</string>
+  <string name="network_stream_hint">Paste URL (HTTP, HTTPS, RTSP, HLS…)</string>
+  <string name="open">Open</string>
+  <string name="cancel">Cancel</string>
+  <string name="ok">OK</string>
+  <!-- Sort -->
+  <string name="sort_by">Sort by</string>
+  <string name="sort_name">Name</string>
+  <string name="sort_date">Date</string>
+  <string name="sort_size">Size</string>
+  <string name="sort_duration">Duration</string>
+  <string name="sort_by_name">By name</string>
+  <string name="sort_by_date">By date</string>
+  <string name="sort_by_size">By size</string>
+  <string name="sort_by_duration">By duration</string>
+  <!-- Actions -->
+  <string name="action_search">Search</string>
+  <string name="action_sort">Sort</string>
+  <string name="action_network_stream">Network stream</string>
+  <string name="action_settings">Settings</string>
+  <!-- Network -->
+  <string name="enter_url_hint">Enter URL (HTTP, HTTPS, RTSP, HLS…)</string>
+  <string name="network_stream">Network Stream</string>
+  <string name="enter_url">Please enter a URL</string>
+  <string name="invalid_url">Invalid URL — must start with http, https, rtsp or rtmp</string>
+  <!-- Player -->
+  <string name="locked">Screen locked</string>
+  <string name="unlock_hint">Swipe up to unlock</string>
+  <string name="speed_label">Speed: %1$s×</string>
+  <string name="aspect_fit">Fit</string>
+  <string name="aspect_fill">Fill</string>
+  <string name="aspect_zoom">Zoom</string>
+  <string name="aspect_16_9">16:9</string>
+  <string name="aspect_4_3">4:3</string>
+  <!-- Settings screen -->
+  <string name="settings">Settings</string>
+  <string name="section_appearance">Appearance</string>
+  <string name="section_playback">Playback</string>
+  <string name="section_audio">Audio</string>
+  <string name="section_storage">Storage</string>
+  <string name="section_about">About</string>
+  <string name="theme">Theme</string>
+  <string name="theme_system">Follow system</string>
+  <string name="theme_light">Light</string>
+  <string name="theme_dark">Dark</string>
+  <string name="background_play">Background playback</string>
+  <string name="background_play_desc">Keep playing when app is in background</string>
+  <string name="resume_playback">Resume where I left off</string>
+  <string name="resume_playback_desc">Continue from last position automatically</string>
+  <string name="hardware_decode">Hardware acceleration</string>
+  <string name="hardware_decode_desc">Use hardware decoder when available</string>
+  <string name="default_speed">Default playback speed</string>
+  <string name="equalizer">Equalizer</string>
+  <string name="equalizer_desc">Adjust frequency bands and bass</string>
+  <string name="bass_boost">Bass boost</string>
+  <string name="bass_boost_desc">Enhance low frequencies</string>
+  <string name="amplifier">Amplifier</string>
+  <string name="amplifier_desc">Boost audio volume beyond device limit</string>
+  <string name="clear_history">Clear watch history</string>
+  <string name="clear_history_desc">Remove all watched video records</string>
+  <string name="clear_history_confirm">Clear history?</string>
+  <string name="clear_history_message">This will remove all watch history. This cannot be undone.</string>
+  <string name="clear">Clear</string>
+  <string name="version">Version</string>
+  <string name="about">About Ryzix Player</string>
+  <string name="about_desc">Premium media player for Android</string>
+  <!-- EQ -->
+  <string name="eq_preset">Preset</string>
+  <string name="eq_flat">Flat</string>
+  <string name="eq_rock">Rock</string>
+  <string name="eq_pop">Pop</string>
+  <string name="eq_jazz">Jazz</string>
+  <string name="eq_classical">Classical</string>
+  <string name="eq_bass_boost">Bass Boost</string>
+  <string name="eq_vocal">Vocal</string>
+  <string name="hz_60">60 Hz</string>
+  <string name="hz_230">230 Hz</string>
+  <string name="hz_910">910 Hz</string>
+  <string name="khz_3_6">3.6 kHz</string>
+  <string name="khz_14">14 kHz</string>
+  <!-- Plurals -->
+  <plurals name="video_count">
+    <item quantity="one">%d video</item>
+    <item quantity="other">%d videos</item>
+  </plurals>
+  <plurals name="track_count">
+    <item quantity="one">%d track</item>
+    <item quantity="other">%d tracks</item>
+  </plurals>
+</resources>
