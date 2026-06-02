@@ -95,41 +95,6 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test --no-daemon
 
-      - name: Save build logs to repo
-        if: always()
-        run: |
-          mkdir -p build-logs
-
-          LOG_FILE="build-logs/run-${{ github.run_number }}-${TAG}.log"
-
-          {
-            echo "=================================================="
-            echo "  Ryzix Player - Build Log"
-            echo "  Run:     #${{ github.run_number }}"
-            echo "  Version: ${TAG}"
-            echo "  Date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-            echo "  Commit:  ${{ github.sha }}"
-            echo "  Trigger: ${{ github.event_name }}"
-            echo "=================================================="
-            echo ""
-            echo "## DEBUG BUILD"
-            echo "--------------------------------------------------"
-            cat build-logs/debug-build.log 2>/dev/null || echo "(debug build did not run)"
-            echo ""
-            echo "## RELEASE BUILD"
-            echo "--------------------------------------------------"
-            cat build-logs/release-build.log 2>/dev/null || echo "(release build did not run)"
-          } > "${LOG_FILE}"
-
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
-          git add build-logs/
-          git diff --cached --quiet || git commit -m "ci(logs): run #${{ github.run_number }} - ${TAG}"
-          git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish GitHub Release
         if: >
           github.event_name == 'push' &&
@@ -165,5 +130,40 @@ jobs:
           files: |
             app/build/outputs/apk/release/Ryzix-Player-*-release.apk
             app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save build logs to repo
+        if: always()
+        run: |
+          mkdir -p build-logs
+
+          LOG_FILE="build-logs/run-${{ github.run_number }}-${TAG}.log"
+
+          {
+            echo "=================================================="
+            echo "  Ryzix Player - Build Log"
+            echo "  Run:     #${{ github.run_number }}"
+            echo "  Version: ${TAG}"
+            echo "  Date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "  Commit:  ${{ github.sha }}"
+            echo "  Trigger: ${{ github.event_name }}"
+            echo "=================================================="
+            echo ""
+            echo "## DEBUG BUILD"
+            echo "--------------------------------------------------"
+            cat build-logs/debug-build.log 2>/dev/null || echo "(debug build did not run)"
+            echo ""
+            echo "## RELEASE BUILD"
+            echo "--------------------------------------------------"
+            cat build-logs/release-build.log 2>/dev/null || echo "(release build did not run)"
+          } > "${LOG_FILE}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          git add build-logs/
+          git diff --cached --quiet || git commit -m "ci(logs): run #${{ github.run_number }} - ${TAG}"
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
