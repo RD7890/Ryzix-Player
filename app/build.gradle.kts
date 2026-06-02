@@ -112,6 +112,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.recyclerview)
     implementation(libs.viewpager2)
+    implementation(libs.fragment.ktx)
 
     // Media3 / ExoPlayer
     implementation(libs.media3.exoplayer)
