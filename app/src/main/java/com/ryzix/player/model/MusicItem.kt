@@ -7,6 +7,7 @@ data class MusicItem(
     val title: String,
     val artist: String,
     val album: String,
+    val albumId: Long,
     val duration: Long,
     val size: Long,
     val path: String,
@@ -22,4 +23,6 @@ data class MusicItem(
         size >= 1_048_576L -> String.format("%.1f MB", size / 1_048_576.0)
         else -> String.format("%.0f KB", size / 1024.0)
     }
+    val albumArtUri: Uri get() =
+        Uri.parse("content://media/external/audio/albumart/$albumId")
 }

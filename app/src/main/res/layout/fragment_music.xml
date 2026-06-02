@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/background">
+
+  <ProgressBar
+    android:id="@+id/progressBar"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:layout_gravity="center"
+    android:indeterminateTint="@color/accent"
+    android:visibility="gone"/>
+
+  <LinearLayout
+    android:id="@+id/layoutEmpty"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="40dp"
+    android:visibility="gone">
+
+    <ImageView
+      android:layout_width="72dp"
+      android:layout_height="72dp"
+      android:src="@drawable/ic_nav_music"
+      android:tint="@color/on_surface_variant"
+      android:alpha="0.3"/>
+
+    <TextView
+      android:id="@+id/tvEmpty"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
+      android:text="@string/no_music"
+      android:textColor="@color/on_surface_variant"
+      android:textSize="16sp"/>
+
+  </LinearLayout>
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/rvMusic"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:paddingTop="6dp"
+    android:paddingBottom="88dp"
+    android:scrollbarStyle="outsideOverlay"/>
+
+</FrameLayout>

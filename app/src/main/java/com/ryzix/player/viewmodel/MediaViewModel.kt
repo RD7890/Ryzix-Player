@@ -40,8 +40,9 @@ class MediaViewModel(application: Application) : AndroidViewModel(application) {
 
     val recentHistory: LiveData<List<WatchHistory>> = dao.getRecentHistory(20).asLiveData()
 
+    val searchQuery = MutableLiveData("")
+
     private var currentFolderId: Long = -1L
-    private var currentSearchQuery: String = ""
 
     fun loadVideos() {
         viewModelScope.launch {
@@ -70,10 +71,13 @@ class MediaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun search(query: String) {
-        currentSearchQuery = query
         val all = _allVideos.value ?: return
         _searchResults.value = if (query.isBlank()) emptyList()
         else MediaUtils.searchVideos(all, query)
+    }
+
+    fun setSearchQuery(query: String) {
+        searchQuery.value = query
     }
 
     fun sortBy(order: Int) {
@@ -90,9 +94,9 @@ class MediaViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun sortVideos(videos: List<VideoItem>, order: Int): List<VideoItem> {
         return when (order) {
-            PreferenceUtils.SORT_BY_NAME -> videos.sortedBy { it.displayName.lowercase() }
-            PreferenceUtils.SORT_BY_DATE -> videos.sortedByDescending { it.dateModified }
-            PreferenceUtils.SORT_BY_SIZE -> videos.sortedByDescending { it.size }
+            PreferenceUtils.SORT_BY_NAME     -> videos.sortedBy { it.displayName.lowercase() }
+            PreferenceUtils.SORT_BY_DATE     -> videos.sortedByDescending { it.dateModified }
+            PreferenceUtils.SORT_BY_SIZE     -> videos.sortedByDescending { it.size }
             PreferenceUtils.SORT_BY_DURATION -> videos.sortedByDescending { it.duration }
             else -> videos.sortedByDescending { it.dateModified }
         }

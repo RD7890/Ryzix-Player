@@ -30,19 +30,19 @@ object MediaUtils {
             "${MediaStore.Video.Media.DURATION} >= ?", arrayOf("1000"),
             "${MediaStore.Video.Media.DATE_MODIFIED} DESC"
         )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-            val titleCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
-            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-            val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
-            val durationCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-            val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
-            val widthCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH)
-            val heightCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT)
-            val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)
+            val idCol        = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val titleCol     = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
+            val nameCol      = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val dataCol      = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+            val durationCol  = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+            val sizeCol      = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+            val widthCol     = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH)
+            val heightCol    = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT)
+            val mimeCol      = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)
             val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
-            val dateModCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_MODIFIED)
-            val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_ID)
-            val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+            val dateModCol   = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_MODIFIED)
+            val bucketIdCol  = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_ID)
+            val bucketNameCol= cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
                 val contentUri = ContentUris.withAppendedId(collection, id)
@@ -75,6 +75,7 @@ object MediaUtils {
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.SIZE,
             MediaStore.Audio.Media.DATA,
@@ -90,6 +91,7 @@ object MediaUtils {
             val titleCol   = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val artistCol  = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val albumCol   = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val albumIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
             val durCol     = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val sizeCol    = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
             val dataCol    = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
@@ -98,14 +100,15 @@ object MediaUtils {
                 val id  = cursor.getLong(idCol)
                 val uri = ContentUris.withAppendedId(collection, id)
                 tracks.add(MusicItem(
-                    id = id,
-                    title   = cursor.getString(titleCol)  ?: "",
-                    artist  = cursor.getString(artistCol) ?: "",
-                    album   = cursor.getString(albumCol)  ?: "",
-                    duration = cursor.getLong(durCol),
-                    size    = cursor.getLong(sizeCol),
-                    path    = if (dataCol >= 0) cursor.getString(dataCol) ?: "" else "",
-                    uri     = uri,
+                    id        = id,
+                    title     = cursor.getString(titleCol)  ?: "",
+                    artist    = cursor.getString(artistCol) ?: "",
+                    album     = cursor.getString(albumCol)  ?: "",
+                    albumId   = cursor.getLong(albumIdCol),
+                    duration  = cursor.getLong(durCol),
+                    size      = cursor.getLong(sizeCol),
+                    path      = if (dataCol >= 0) cursor.getString(dataCol) ?: "" else "",
+                    uri       = uri,
                     dateAdded = cursor.getLong(dateCol)
                 ))
             }

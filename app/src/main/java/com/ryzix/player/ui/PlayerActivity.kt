@@ -22,6 +22,7 @@ import android.util.Rational
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -35,7 +36,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -53,10 +53,14 @@ import java.util.concurrent.TimeUnit
 class PlayerActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_URI      = "extra_uri"
-        const val EXTRA_TITLE    = "extra_title"
-        const val EXTRA_PATH     = "extra_path"
-        const val EXTRA_DURATION = "extra_duration"
+        const val EXTRA_URI             = "extra_uri"
+        const val EXTRA_TITLE           = "extra_title"
+        const val EXTRA_PATH            = "extra_path"
+        const val EXTRA_DURATION        = "extra_duration"
+        const val EXTRA_PLAYLIST_URIS   = "extra_playlist_uris"
+        const val EXTRA_PLAYLIST_TITLES = "extra_playlist_titles"
+        const val EXTRA_PLAYLIST_INDEX  = "extra_playlist_index"
+        const val EXTRA_RESUME_MS       = "extra_resume_ms"
 
         private val ASPECT_MODES = intArrayOf(
             AspectRatioFrameLayout.RESIZE_MODE_FIT,
@@ -69,20 +73,26 @@ class PlayerActivity : AppCompatActivity() {
         private val SPEED_OPTIONS = floatArrayOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f, 4.0f)
         private val SPEED_LABELS  = arrayOf("0.25×", "0.5×", "0.75×", "1×", "1.25×", "1.5×", "2×", "3×", "4×")
 
-        private const val CONTROLS_HIDE_DELAY   = 3500L
-        private const val SEEK_OVERLAY_DELAY    = 800L
-        private const val INDICATOR_DELAY       = 1200L
+        private const val CONTROLS_HIDE_DELAY = 3500L
+        private const val SEEK_OVERLAY_DELAY  = 800L
+        private const val INDICATOR_DELAY     = 1200L
 
-        private const val PIP_ACTION      = "com.ryzix.player.PIP_ACTION"
-        private const val PIP_EXTRA       = "pip_action"
-        private const val PIP_PLAY_PAUSE  = 1
-        private const val PIP_REWIND      = 2
-        private const val PIP_FORWARD     = 3
+        private const val PIP_ACTION     = "com.ryzix.player.PIP_ACTION"
+        private const val PIP_EXTRA      = "pip_action"
+        private const val PIP_PLAY_PAUSE = 1
+        private const val PIP_REWIND     = 2
+        private const val PIP_FORWARD    = 3
     }
 
     private lateinit var binding: ActivityPlayerBinding
     private val viewModel: PlayerViewModel by viewModels()
     private var player: ExoPlayer? = null
+
+    // Playlist
+    private var playlistUris:   List<String> = emptyList()
+    private var playlistTitles: List<String> = emptyList()
+    private var currentPlaylistIndex = 0
+    private var isLooping = false
 
     // Audio effects
     private var equalizer: Equalizer? = null
@@ -93,22 +103,22 @@ class PlayerActivity : AppCompatActivity() {
     private var gestureListener: PlayerGestureListener? = null
 
     private var isSeekbarTracking = false
-    private var isLocked = false
-    private var aspectModeIndex = 0
-    private var speedIndex = 3
+    private var isLocked         = false
+    private var aspectModeIndex  = 0
+    private var speedIndex       = 3
 
-    private var currentUri   = ""
-    private var currentTitle = ""
-    private var currentPath  = ""
+    private var currentUri    = ""
+    private var currentTitle  = ""
+    private var currentPath   = ""
     private var totalDuration = 0L
 
-    private val controlsHandler    = Handler(Looper.getMainLooper())
+    private val controlsHandler     = Handler(Looper.getMainLooper())
     private val seekOverlayHandler  = Handler(Looper.getMainLooper())
     private val indicatorHandler    = Handler(Looper.getMainLooper())
 
-    private val hideControlsRunnable   = Runnable { hideControls() }
+    private val hideControlsRunnable    = Runnable { hideControls() }
     private val hideSeekOverlayRunnable = Runnable { hideSeekOverlay() }
-    private val hideIndicatorRunnable  = Runnable {
+    private val hideIndicatorRunnable   = Runnable {
         binding.layoutBrightnessIndicator.animate().alpha(0f).setDuration(200)
             .withEndAction { binding.layoutBrightnessIndicator.visibility = View.GONE }.start()
         binding.layoutVolumeIndicator.animate().alpha(0f).setDuration(200)
@@ -119,8 +129,8 @@ class PlayerActivity : AppCompatActivity() {
         override fun onReceive(ctx: Context, intent: Intent) {
             when (intent.getIntExtra(PIP_EXTRA, 0)) {
                 PIP_PLAY_PAUSE -> player?.let { if (it.isPlaying) it.pause() else it.play() }
-                PIP_REWIND    -> seek(-10_000L)
-                PIP_FORWARD   -> seek(+10_000L)
+                PIP_REWIND     -> seek(-10_000L)
+                PIP_FORWARD    -> seek(+10_000L)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) updatePipActions()
         }
@@ -139,6 +149,8 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    // ── LIFECYCLE ────────────────────────────────────────────────────────────
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
@@ -151,6 +163,11 @@ class PlayerActivity : AppCompatActivity() {
         currentTitle = intent.getStringExtra(EXTRA_TITLE) ?: ""
         currentPath  = intent.getStringExtra(EXTRA_PATH)  ?: ""
         totalDuration = intent.getLongExtra(EXTRA_DURATION, 0L)
+
+        // Playlist
+        playlistUris   = intent.getStringArrayListExtra(EXTRA_PLAYLIST_URIS)   ?: listOf(currentUri)
+        playlistTitles = intent.getStringArrayListExtra(EXTRA_PLAYLIST_TITLES) ?: listOf(currentTitle)
+        currentPlaylistIndex = intent.getIntExtra(EXTRA_PLAYLIST_INDEX, 0)
 
         viewModel.currentVideoPath  = currentPath
         viewModel.currentVideoTitle = currentTitle
@@ -166,6 +183,7 @@ class PlayerActivity : AppCompatActivity() {
         setupControls()
         setupGestures()
         scheduleHideControls()
+        updateNextPrevState()
     }
 
     // ── PLAYER ────────────────────────────────────────────────────────────────
@@ -175,9 +193,14 @@ class PlayerActivity : AppCompatActivity() {
             binding.playerView.player = exo
             binding.playerView.useController = false
 
+            val resumeMs = intent.getLongExtra(EXTRA_RESUME_MS, -1L)
+
             lifecycleScope.launch {
-                val resumePos = viewModel.getResumePosition()
-                exo.setMediaItem(MediaItem.fromUri(Uri.parse(currentUri)), resumePos)
+                val position = when {
+                    resumeMs >= 0 -> resumeMs
+                    else -> viewModel.getResumePosition()
+                }
+                exo.setMediaItem(MediaItem.fromUri(Uri.parse(currentUri)), position)
                 exo.prepare()
                 exo.playWhenReady = true
             }
@@ -197,21 +220,25 @@ class PlayerActivity : AppCompatActivity() {
                     }
                     if (state == Player.STATE_ENDED) {
                         viewModel.savePosition(0L)
-                        showControls()
+                        if (isLooping) {
+                            exo.seekTo(0L); exo.play()
+                        } else {
+                            showControls()
+                            if (currentPlaylistIndex + 1 < playlistUris.size) {
+                                playAtIndex(currentPlaylistIndex + 1)
+                            }
+                        }
                     }
                 }
-
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     updatePlayPauseIcon()
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) updatePipActions()
                 }
-
                 override fun onVideoSizeChanged(videoSize: VideoSize) {
                     if (videoSize.width > 0 && videoSize.height > 0
                         && videoSize.width > videoSize.height)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }
-
                 override fun onPlayerError(error: PlaybackException) {
                     Toast.makeText(this@PlayerActivity,
                         "${getString(R.string.playback_error)}: ${error.message}",
@@ -219,6 +246,36 @@ class PlayerActivity : AppCompatActivity() {
                 }
             })
         }
+    }
+
+    private fun playAtIndex(index: Int) {
+        if (index < 0 || index >= playlistUris.size) return
+        val savedPosition = player?.currentPosition ?: 0L
+        viewModel.savePosition(savedPosition)
+
+        currentPlaylistIndex = index
+        currentUri   = playlistUris[index]
+        currentTitle = playlistTitles.getOrElse(index) { "" }
+
+        viewModel.currentVideoPath  = ""
+        viewModel.currentVideoTitle = currentTitle
+
+        binding.tvTitle.text = currentTitle.substringBeforeLast(".")
+
+        player?.let { exo ->
+            exo.setMediaItem(MediaItem.fromUri(Uri.parse(currentUri)))
+            exo.prepare()
+            exo.playWhenReady = true
+        }
+
+        updateNextPrevState()
+    }
+
+    private fun updateNextPrevState() {
+        val hasNext = currentPlaylistIndex + 1 < playlistUris.size
+        val hasPrev = currentPlaylistIndex > 0
+        binding.btnNext.alpha     = if (hasNext || playlistUris.size <= 1) 1.0f else 0.4f
+        binding.btnPrevious.alpha = if (hasPrev) 1.0f else 0.4f
     }
 
     private fun initAudioEffects(sessionId: Int) {
@@ -236,8 +293,7 @@ class PlayerActivity : AppCompatActivity() {
             val eq = equalizer ?: return
             for (i in 0 until eq.numberOfBands.toInt().coerceAtMost(5)) {
                 val progress = prefs.getInt("eq_band_$i", 50)
-                val min = eq.bandLevelRange[0]
-                val max = eq.bandLevelRange[1]
+                val min = eq.bandLevelRange[0]; val max = eq.bandLevelRange[1]
                 val level = (min + (progress / 100.0) * (max - min)).toInt().toShort()
                 eq.setBandLevel(i.toShort(), level)
             }
@@ -254,7 +310,7 @@ class PlayerActivity : AppCompatActivity() {
         try {
             val name = player?.videoFormat?.codecs ?: return
             binding.tvCodec.text = when {
-                name.contains("avc", true)  -> "H.264"
+                name.contains("avc",  true) -> "H.264"
                 name.contains("hevc", true) -> "HEVC"
                 name.contains("vp9",  true) -> "VP9"
                 name.contains("av1",  true) -> "AV1"
@@ -263,7 +319,7 @@ class PlayerActivity : AppCompatActivity() {
         } catch (_: Exception) {}
     }
 
-    // ── CONTROLS ─────────────────────────────────────────────────────────────
+    // ── CONTROLS ──────────────────────────────────────────────────────────────
 
     private fun setupControls() {
         binding.btnPlayPause.setOnClickListener {
@@ -276,13 +332,26 @@ class PlayerActivity : AppCompatActivity() {
         binding.btnForward.setOnClickListener {
             seek(+10_000L); showSeekOverlay(+10); scheduleHideControls()
         }
+
+        // ── Fixed: prev/next play in the playlist ──
         binding.btnPrevious.setOnClickListener {
-            player?.seekTo(0L); scheduleHideControls()
-        }
-        binding.btnNext.setOnClickListener {
-            player?.let { it.seekTo((it.currentPosition + 30_000).coerceAtMost(it.duration)) }
+            val exo = player ?: return@setOnClickListener
+            if (exo.currentPosition > 3_000L) {
+                exo.seekTo(0L)
+            } else if (currentPlaylistIndex > 0) {
+                playAtIndex(currentPlaylistIndex - 1)
+            } else {
+                exo.seekTo(0L)
+            }
             scheduleHideControls()
         }
+        binding.btnNext.setOnClickListener {
+            if (currentPlaylistIndex + 1 < playlistUris.size) {
+                playAtIndex(currentPlaylistIndex + 1)
+            }
+            scheduleHideControls()
+        }
+
         binding.btnBack.setOnClickListener { saveAndFinish() }
         binding.btnLock.setOnClickListener { toggleLock() }
         binding.btnUnlock.setOnClickListener { toggleLock() }
@@ -302,19 +371,28 @@ class PlayerActivity : AppCompatActivity() {
             scheduleHideControls()
         }
         binding.btnSpeed.setOnClickListener {
-            speedIndex = (speedIndex + 1) % SPEED_OPTIONS.size
-            player?.setPlaybackSpeed(SPEED_OPTIONS[speedIndex])
-            binding.btnSpeed.text = SPEED_LABELS[speedIndex]
+            val labels = SPEED_LABELS
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Playback Speed")
+                .setItems(labels) { _, which ->
+                    speedIndex = which
+                    player?.setPlaybackSpeed(SPEED_OPTIONS[which])
+                    binding.btnSpeed.text = SPEED_LABELS[which]
+                }.show()
             scheduleHideControls()
         }
 
-        // EQ bottom sheet
+        // ── Fixed: three dots menu ──
+        binding.btnMore.setOnClickListener { view ->
+            showMoreMenu(view)
+            scheduleHideControls()
+        }
+
         binding.btnEqualizer.setOnClickListener {
             val sessionId = player?.audioSessionId ?: 0
-            releaseAudioEffects() // sheet will own the effects while open
+            releaseAudioEffects()
             val sheet = EqualizerBottomSheet.newInstance(sessionId)
             sheet.onDismissListener = {
-                // Re-attach effects after sheet closes
                 player?.audioSessionId?.let { sid ->
                     if (sid != 0) { initAudioEffects(sid); restoreSavedEq(sid) }
                 }
@@ -323,16 +401,11 @@ class PlayerActivity : AppCompatActivity() {
             scheduleHideControls()
         }
 
-        // Audio track selector
         binding.btnAudioTrack.setOnClickListener {
-            showAudioTrackDialog()
-            scheduleHideControls()
+            showAudioTrackDialog(); scheduleHideControls()
         }
-
-        // Subtitle selector
         binding.btnSubtitle.setOnClickListener {
-            showSubtitleDialog()
-            scheduleHideControls()
+            showSubtitleDialog(); scheduleHideControls()
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -353,33 +426,73 @@ class PlayerActivity : AppCompatActivity() {
         })
     }
 
+    private fun showMoreMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, 1, 0, getString(R.string.share_video))
+        popup.menu.add(0, 2, 1, if (isLooping) "Stop loop" else getString(R.string.loop_video))
+        popup.menu.add(0, 3, 2, getString(R.string.video_info))
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> {
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                        type = "video/*"
+                        putExtra(Intent.EXTRA_STREAM, Uri.parse(currentUri))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }, getString(R.string.share_via)))
+                    true
+                }
+                2 -> {
+                    isLooping = !isLooping
+                    Toast.makeText(this,
+                        if (isLooping) "Loop ON" else "Loop OFF",
+                        Toast.LENGTH_SHORT).show()
+                    true
+                }
+                3 -> {
+                    val dur = formatDuration(totalDuration)
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle(currentTitle.substringBeforeLast("."))
+                        .setMessage("Duration: $dur\nPath: $currentPath")
+                        .setPositiveButton(getString(R.string.ok), null)
+                        .show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
     private fun showAudioTrackDialog() {
         val exo = player ?: return
-        val audioGroups = exo.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO }
+        val audioGroups = exo.currentTracks.groups.filter {
+            it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO
+        }
         if (audioGroups.isEmpty()) {
-            Toast.makeText(this, "No alternate audio tracks", Toast.LENGTH_SHORT).show(); return
+            Toast.makeText(this, "No alternate audio tracks", Toast.LENGTH_SHORT).show()
+            return
         }
         val labels = audioGroups.mapIndexed { i, g ->
-            val fmt = g.getTrackFormat(0)
-            fmt.language?.uppercase() ?: "Track ${i + 1}"
+            g.getTrackFormat(0).language?.uppercase() ?: "Track ${i + 1}"
         }.toTypedArray()
         MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.eq_preset).replace("Preset","Audio Track"))
+            .setTitle("Audio Track")
             .setItems(labels) { _, which ->
-                val params = exo.trackSelectionParameters.buildUpon()
+                exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
                     .setPreferredAudioLanguage(audioGroups[which].getTrackFormat(0).language)
                     .build()
-                exo.trackSelectionParameters = params
             }.show()
     }
 
     private fun showSubtitleDialog() {
         val exo = player ?: return
-        val subGroups = exo.currentTracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_TEXT }
+        val subGroups = exo.currentTracks.groups.filter {
+            it.type == androidx.media3.common.C.TRACK_TYPE_TEXT
+        }
         val labels = mutableListOf("Off")
         subGroups.forEachIndexed { i, g ->
-            val lang = g.getTrackFormat(0).language?.uppercase() ?: "Sub ${i + 1}"
-            labels.add(lang)
+            labels.add(g.getTrackFormat(0).language?.uppercase() ?: "Sub ${i + 1}")
         }
         MaterialAlertDialogBuilder(this)
             .setTitle("Subtitles")
@@ -387,18 +500,16 @@ class PlayerActivity : AppCompatActivity() {
                 if (which == 0) {
                     exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
                         .setIgnoredTextSelectionFlags(androidx.media3.common.C.SELECTION_FLAG_DEFAULT)
-                        .setPreferredTextLanguage(null)
-                        .build()
+                        .setPreferredTextLanguage(null).build()
                 } else {
                     val lang = subGroups[which - 1].getTrackFormat(0).language
                     exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
-                        .setPreferredTextLanguage(lang)
-                        .build()
+                        .setPreferredTextLanguage(lang).build()
                 }
             }.show()
     }
 
-    // ── GESTURES ─────────────────────────────────────────────────────────────
+    // ── GESTURES ──────────────────────────────────────────────────────────────
 
     private fun setupGestures() {
         val sw = resources.displayMetrics.widthPixels
@@ -432,9 +543,11 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // ── SEEK OVERLAY ─────────────────────────────────────────────────────────
+    // ── SEEK OVERLAY ──────────────────────────────────────────────────────────
 
-    private fun showSeekOverlay(deltaSeconds: Int) = showSeekOverlayAt(player?.currentPosition ?: 0L, deltaSeconds)
+    private fun showSeekOverlay(deltaSeconds: Int) =
+        showSeekOverlayAt(player?.currentPosition ?: 0L, deltaSeconds)
+
     private fun showSeekOverlayAt(posMs: Long, deltaSeconds: Int) {
         binding.layoutSeekOverlay.visibility = View.VISIBLE
         binding.layoutSeekOverlay.alpha = 1f
@@ -447,12 +560,13 @@ class PlayerActivity : AppCompatActivity() {
         seekOverlayHandler.removeCallbacks(hideSeekOverlayRunnable)
         seekOverlayHandler.postDelayed(hideSeekOverlayRunnable, SEEK_OVERLAY_DELAY)
     }
+
     private fun hideSeekOverlay() {
         binding.layoutSeekOverlay.animate().alpha(0f).setDuration(200)
             .withEndAction { binding.layoutSeekOverlay.visibility = View.GONE }.start()
     }
 
-    // ── INDICATORS ───────────────────────────────────────────────────────────
+    // ── INDICATORS ────────────────────────────────────────────────────────────
 
     private fun showVolumeIndicator(level: Int) {
         binding.layoutVolumeIndicator.apply { visibility = View.VISIBLE; alpha = 1f }
@@ -460,6 +574,7 @@ class PlayerActivity : AppCompatActivity() {
         indicatorHandler.removeCallbacks(hideIndicatorRunnable)
         indicatorHandler.postDelayed(hideIndicatorRunnable, INDICATOR_DELAY)
     }
+
     private fun showBrightnessIndicator(level: Int) {
         binding.layoutBrightnessIndicator.apply { visibility = View.VISIBLE; alpha = 1f }
         binding.tvBrightnessIndicator.text = "$level%"
@@ -467,7 +582,7 @@ class PlayerActivity : AppCompatActivity() {
         indicatorHandler.postDelayed(hideIndicatorRunnable, INDICATOR_DELAY)
     }
 
-    // ── CONTROLS SHOW / HIDE ─────────────────────────────────────────────────
+    // ── CONTROLS SHOW / HIDE ──────────────────────────────────────────────────
 
     private fun showControls() {
         if (isLocked) return
@@ -478,24 +593,29 @@ class PlayerActivity : AppCompatActivity() {
         }
         scheduleHideControls()
     }
+
     private fun hideControls() {
         binding.controlsContainer.animate().alpha(0f).setDuration(250)
             .withEndAction { binding.controlsContainer.visibility = View.GONE }.start()
     }
+
     private fun scheduleHideControls() {
         controlsHandler.removeCallbacks(hideControlsRunnable)
         controlsHandler.postDelayed(hideControlsRunnable, CONTROLS_HIDE_DELAY)
     }
+
     private fun cancelHideControls() = controlsHandler.removeCallbacks(hideControlsRunnable)
 
-    // ── LOCK ─────────────────────────────────────────────────────────────────
+    // ── LOCK ──────────────────────────────────────────────────────────────────
 
     private fun toggleLock() {
         isLocked = !isLocked
         if (isLocked) {
             binding.controlsContainer.visibility = View.GONE
-            binding.lockOverlay.apply { alpha = 0f; visibility = View.VISIBLE
-                animate().alpha(1f).setDuration(200).start() }
+            binding.lockOverlay.apply {
+                alpha = 0f; visibility = View.VISIBLE
+                animate().alpha(1f).setDuration(200).start()
+            }
             binding.btnLock.setImageResource(R.drawable.ic_lock)
         } else {
             binding.lockOverlay.animate().alpha(0f).setDuration(200)
@@ -505,81 +625,106 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // ── PIP ──────────────────────────────────────────────────────────────────
+    // ── PIP ───────────────────────────────────────────────────────────────────
 
     private fun enterPip() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) enterPictureInPictureMode(buildPipParams())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            enterPictureInPictureMode(buildPipParams())
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun buildPipParams(): PictureInPictureParams {
         val playing = player?.isPlaying == true
         fun mkAction(code: Int, iconRes: Int, label: String) = RemoteAction(
             Icon.createWithResource(this, iconRes), label, label,
-            PendingIntent.getBroadcast(this, code,
-                Intent(PIP_ACTION).putExtra(PIP_EXTRA, code),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            PendingIntent.getBroadcast(
+                this, code,
+                Intent(PIP_ACTION).setPackage(packageName).putExtra(PIP_EXTRA, code),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        )
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
             .setActions(listOf(
                 mkAction(PIP_REWIND,    R.drawable.ic_rewind, "-10s"),
-                mkAction(PIP_PLAY_PAUSE, if (playing) R.drawable.ic_pause else R.drawable.ic_play,
+                mkAction(PIP_PLAY_PAUSE,
+                    if (playing) R.drawable.ic_pause else R.drawable.ic_play,
                     if (playing) "Pause" else "Play"),
-                mkAction(PIP_FORWARD,  R.drawable.ic_forward, "+10s")
+                mkAction(PIP_FORWARD, R.drawable.ic_forward, "+10s")
             )).build()
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun updatePipActions() { if (isInPictureInPictureMode) setPictureInPictureParams(buildPipParams()) }
-    override fun onPictureInPictureModeChanged(isInPiP: Boolean, newConfig: Configuration) {
-        super.onPictureInPictureModeChanged(isInPiP, newConfig)
-        if (isInPiP) { binding.controlsContainer.visibility = View.GONE
-            binding.lockOverlay.visibility = View.GONE; cancelHideControls()
-        } else { if (!isLocked) showControls() }
+    private fun updatePipActions() {
+        if (isInPictureInPictureMode) setPictureInPictureParams(buildPipParams())
     }
 
-    // ── HELPERS ──────────────────────────────────────────────────────────────
+    override fun onPictureInPictureModeChanged(isInPiP: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPiP, newConfig)
+        if (isInPiP) {
+            binding.controlsContainer.visibility = View.GONE
+            binding.lockOverlay.visibility = View.GONE
+            cancelHideControls()
+        } else {
+            if (!isLocked) showControls()
+        }
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
 
     private fun seek(offsetMs: Long) {
         player?.let { it.seekTo((it.currentPosition + offsetMs).coerceIn(0L, it.duration)) }
     }
+
     private fun updatePlayPauseIcon() {
         binding.btnPlayPause.setImageResource(
-            if (player?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play)
+            if (player?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play
+        )
     }
+
     private fun hideSystemUI() {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             hide(WindowInsetsCompat.Type.systemBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
+
     private fun saveAndFinish() {
         viewModel.savePosition(player?.currentPosition ?: 0L); finish()
     }
+
     private fun formatDuration(ms: Long): String {
         if (ms < 0) return "00:00"
         val h = TimeUnit.MILLISECONDS.toHours(ms)
         val m = TimeUnit.MILLISECONDS.toMinutes(ms) % 60
         val s = TimeUnit.MILLISECONDS.toSeconds(ms) % 60
-        return if (h > 0) String.format("%d:%02d:%02d", h, m, s) else String.format("%02d:%02d", m, s)
+        return if (h > 0) String.format("%d:%02d:%02d", h, m, s)
+        else String.format("%02d:%02d", m, s)
     }
+
     private fun releaseAudioEffects() {
-        try { equalizer?.release(); bassBoost?.release(); loudnessEnhancer?.release() } catch (_: Exception) {}
+        try { equalizer?.release(); bassBoost?.release(); loudnessEnhancer?.release() }
+        catch (_: Exception) {}
         equalizer = null; bassBoost = null; loudnessEnhancer = null
     }
 
-    // ── LIFECYCLE ────────────────────────────────────────────────────────────
+    // ── LIFECYCLE ─────────────────────────────────────────────────────────────
 
     override fun onStart() {
         super.onStart()
         val filter = IntentFilter(PIP_ACTION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             registerReceiver(pipReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        else @Suppress("UnspecifiedRegisterReceiverFlag") registerReceiver(pipReceiver, filter)
+        else @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(pipReceiver, filter)
     }
+
     override fun onPause() {
         super.onPause()
         player?.let { viewModel.savePosition(it.currentPosition) }
         if (!isInPictureInPictureMode) player?.pause()
     }
+
     override fun onStop() {
         super.onStop()
         controlsHandler.removeCallbacksAndMessages(null)
@@ -587,11 +732,13 @@ class PlayerActivity : AppCompatActivity() {
         indicatorHandler.removeCallbacksAndMessages(null)
         try { unregisterReceiver(pipReceiver) } catch (_: Exception) {}
     }
+
     override fun onDestroy() {
         super.onDestroy()
         releaseAudioEffects()
         player?.release(); player = null
     }
+
     @Suppress("DEPRECATION")
     override fun onBackPressed() { saveAndFinish() }
 }

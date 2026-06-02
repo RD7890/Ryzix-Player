@@ -1,10 +1,13 @@
 package com.ryzix.player.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import com.ryzix.player.R
 import com.ryzix.player.databinding.ItemMusicBinding
 import com.ryzix.player.model.MusicItem
 
@@ -21,10 +24,20 @@ class MusicAdapter(
 
     inner class MusicViewHolder(private val b: ItemMusicBinding) :
         RecyclerView.ViewHolder(b.root) {
+
         fun bind(item: MusicItem) {
-            b.tvMusicTitle.text = item.title.ifBlank { item.path.substringAfterLast("/") }
+            b.tvMusicTitle.text  = item.title.ifBlank { item.path.substringAfterLast("/") }
             b.tvMusicArtist.text = item.artist.ifBlank { "Unknown Artist" }
             b.tvMusicDuration.text = item.durationFormatted
+
+            b.imgAlbumArt.load(item.albumArtUri) {
+                crossfade(true)
+                listener(
+                    onSuccess = { _, _ -> b.imgAlbumArtFallback.visibility = View.GONE },
+                    onError   = { _, _ -> b.imgAlbumArtFallback.visibility = View.VISIBLE }
+                )
+            }
+
             b.root.setOnClickListener { onClick(item) }
             b.btnMusicMore.setOnClickListener { onMoreClick(item) }
         }

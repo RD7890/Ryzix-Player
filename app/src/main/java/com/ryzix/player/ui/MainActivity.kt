@@ -5,116 +5,121 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.Fragment
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ryzix.player.R
-import com.ryzix.player.adapter.FolderAdapter
-import com.ryzix.player.adapter.MusicAdapter
-import com.ryzix.player.adapter.VideoAdapter
 import com.ryzix.player.databinding.ActivityMainBinding
-import com.ryzix.player.model.MusicItem
-import com.ryzix.player.model.VideoItem
-import com.ryzix.player.utils.MediaUtils
+import com.ryzix.player.ui.fragment.FoldersFragment
+import com.ryzix.player.ui.fragment.MusicFragment
+import com.ryzix.player.ui.fragment.VideosFragment
 import com.ryzix.player.utils.PreferenceUtils
 import com.ryzix.player.viewmodel.MediaViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MediaViewModel by viewModels()
 
-    private lateinit var videoAdapter: VideoAdapter
-    private lateinit var folderAdapter: FolderAdapter
-    private lateinit var musicAdapter: MusicAdapter
-    private var allMusic: List<MusicItem> = emptyList()
+    private lateinit var videosFragment: VideosFragment
+    private lateinit var musicFragment: MusicFragment
+    private lateinit var foldersFragment: FoldersFragment
+
+    private var isSearchVisible = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
         if (perms.values.any { it }) {
             viewModel.loadVideos()
-            loadMusicIfGranted()
         } else {
             Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupAdapters()
+        videosFragment  = VideosFragment()
+        musicFragment   = MusicFragment()
+        foldersFragment = FoldersFragment()
+
+        setupViewPager()
         setupBottomNav()
-        setupSearch()
-        setupToolbarActions()
-        setupObservers()
+        setupSearchButton()
+        setupSortButton()
         checkPermissions()
     }
 
-    private fun setupAdapters() {
-        videoAdapter = VideoAdapter(
-            onVideoClick  = { openPlayer(it) },
-            onVideoLongClick = { showVideoOptions(it) }
-        )
-        folderAdapter = FolderAdapter(
-            onFolderClick = { folder ->
-                viewModel.openFolder(folder.id)
-                binding.bottomNav.selectedItemId = R.id.nav_local
+    // ── ViewPager2 ────────────────────────────────────────────────────────────
+
+    private fun setupViewPager() {
+        binding.viewPager.adapter = MainPagerAdapter()
+        binding.viewPager.isUserInputEnabled = true
+        binding.viewPager.offscreenPageLimit = 2
+
+        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val navId = when (position) {
+                    0 -> R.id.nav_local
+                    1 -> R.id.nav_music
+                    2 -> R.id.nav_folders
+                    else -> R.id.nav_local
+                }
+                if (binding.bottomNav.selectedItemId != navId) {
+                    binding.bottomNav.selectedItemId = navId
+                }
             }
-        )
-        musicAdapter = MusicAdapter(
-            onClick      = { openMusicPlayer(it) },
-            onMoreClick  = { showMusicOptions(it) }
-        )
-        binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = videoAdapter
-            setHasFixedSize(true)
-            itemAnimator?.changeDuration = 150
+        })
+    }
+
+    private inner class MainPagerAdapter : FragmentStateAdapter(this) {
+        override fun getItemCount() = 3
+        override fun createFragment(position: Int): Fragment = when (position) {
+            0 -> videosFragment
+            1 -> musicFragment
+            2 -> foldersFragment
+            else -> videosFragment
         }
     }
+
+    // ── Bottom nav ────────────────────────────────────────────────────────────
 
     private fun setupBottomNav() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_local -> {
+                    binding.viewPager.setCurrentItem(0, true)
                     updateSearchHint(getString(R.string.search_hint))
-                    binding.recyclerView.adapter = videoAdapter
-                    viewModel.clearFolderFilter()
-                    viewModel.filteredVideos.value?.let { videoAdapter.submitList(it) }
-                    showEmpty(videoAdapter.currentList.isEmpty(), getString(R.string.no_videos))
-                    true
-                }
-                R.id.nav_folders -> {
-                    updateSearchHint(getString(R.string.search_hint))
-                    binding.recyclerView.adapter = folderAdapter
-                    viewModel.folders.value?.let { folderAdapter.submitList(it) }
-                    showEmpty(folderAdapter.currentList.isEmpty(), getString(R.string.no_folders))
                     true
                 }
                 R.id.nav_music -> {
+                    binding.viewPager.setCurrentItem(1, true)
                     updateSearchHint(getString(R.string.search_music_hint))
-                    binding.recyclerView.adapter = musicAdapter
-                    musicAdapter.submitList(allMusic)
-                    showEmpty(allMusic.isEmpty(), getString(R.string.no_music))
                     true
                 }
-                R.id.nav_history -> {
+                R.id.nav_folders -> {
+                    binding.viewPager.setCurrentItem(2, true)
                     updateSearchHint(getString(R.string.search_hint))
-                    showHistory()
                     true
+                }
+                R.id.nav_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                    false // don't select settings tab in nav
                 }
                 else -> false
             }
@@ -122,42 +127,58 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.selectedItemId = R.id.nav_local
     }
 
-    private fun updateSearchHint(hint: String) {
-        binding.searchView.queryHint = hint
-    }
+    // ── Search ────────────────────────────────────────────────────────────────
 
-    private fun setupSearch() {
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(q: String?) = false
-            override fun onQueryTextChange(q: String?): Boolean {
-                val query = q?.trim() ?: ""
-                val tab = binding.bottomNav.selectedItemId
-                when {
-                    tab == R.id.nav_music -> {
-                        val results = if (query.isBlank()) allMusic
-                        else MediaUtils.searchAudio(allMusic, query)
-                        musicAdapter.submitList(results)
-                        showEmpty(results.isEmpty(),
-                            if (query.isBlank()) getString(R.string.no_music)
-                            else getString(R.string.no_results, query))
-                    }
-                    query.isBlank() -> {
-                        viewModel.filteredVideos.value?.let { videoAdapter.submitList(it) }
-                        showEmpty(videoAdapter.currentList.isEmpty(), getString(R.string.no_videos))
-                    }
-                    else -> {
-                        viewModel.search(query)
-                        val results = viewModel.searchResults.value ?: emptyList()
-                        videoAdapter.submitList(results)
-                        showEmpty(results.isEmpty(), getString(R.string.no_results, query))
-                    }
+    private fun setupSearchButton() {
+        binding.btnSearch.setOnClickListener { toggleSearch(true) }
+
+        binding.tvCancelSearch.setOnClickListener {
+            toggleSearch(false)
+            viewModel.setSearchQuery("")
+        }
+
+        binding.btnClearSearch.setOnClickListener {
+            binding.etSearch.text?.clear()
+        }
+
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(e: Editable?) {
+                val query = e?.toString()?.trim() ?: ""
+                binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+
+                when (binding.viewPager.currentItem) {
+                    0 -> viewModel.setSearchQuery(query)
+                    1 -> musicFragment.filterMusic(query)
+                    else -> { /* folders don't search */ }
                 }
-                return true
             }
         })
     }
 
-    private fun setupToolbarActions() {
+    private fun toggleSearch(show: Boolean) {
+        isSearchVisible = show
+        binding.layoutSearchBar.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) {
+            binding.etSearch.requestFocus()
+            val imm = getSystemService(InputMethodManager::class.java)
+            imm?.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            binding.etSearch.text?.clear()
+            val imm = getSystemService(InputMethodManager::class.java)
+            imm?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+            binding.etSearch.clearFocus()
+        }
+    }
+
+    private fun updateSearchHint(hint: String) {
+        binding.etSearch.hint = hint
+    }
+
+    // ── Sort ──────────────────────────────────────────────────────────────────
+
+    private fun setupSortButton() {
         binding.btnSort.setOnClickListener {
             val options = arrayOf(
                 getString(R.string.sort_name), getString(R.string.sort_date),
@@ -175,141 +196,36 @@ class MainActivity : AppCompatActivity() {
                     viewModel.sortBy(key)
                 }.show()
         }
-
-        binding.btnSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
     }
 
-    private fun setupObservers() {
-        viewModel.filteredVideos.observe(this) { videos ->
-            val tab = binding.bottomNav.selectedItemId
-            if (tab == R.id.nav_local) {
-                videoAdapter.submitList(videos)
-                showEmpty(videos.isEmpty() && viewModel.isLoading.value != true,
-                    getString(R.string.no_videos))
-            }
-        }
-        viewModel.folders.observe(this) { folders ->
-            if (binding.bottomNav.selectedItemId == R.id.nav_folders) {
-                folderAdapter.submitList(folders)
-                showEmpty(folders.isEmpty(), getString(R.string.no_folders))
-            }
-        }
-        viewModel.isLoading.observe(this) { loading ->
-            binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-        }
-    }
-
-    private fun showEmpty(empty: Boolean, message: String) {
-        binding.layoutEmpty.visibility  = if (empty) View.VISIBLE else View.GONE
-        binding.tvEmpty.text            = message
-        binding.recyclerView.visibility = if (empty) View.GONE   else View.VISIBLE
-    }
-
-    private fun showHistory() {
-        binding.recyclerView.adapter = videoAdapter
-        viewModel.recentHistory.observe(this) { historyList ->
-            val histVideos = historyList.mapNotNull { h ->
-                viewModel.allVideos.value?.find { it.path == h.videoPath }
-            }
-            videoAdapter.submitList(histVideos)
-            showEmpty(histVideos.isEmpty(), getString(R.string.no_history))
-        }
-    }
-
-    private fun loadMusicIfGranted() {
-        val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            Manifest.permission.READ_MEDIA_AUDIO
-        else Manifest.permission.READ_EXTERNAL_STORAGE
-        if (ContextCompat.checkSelfPermission(this, audioPermission) ==
-            PackageManager.PERMISSION_GRANTED) {
-            lifecycleScope.launch {
-                allMusic = withContext(Dispatchers.IO) { MediaUtils.getAllAudio(this@MainActivity) }
-                if (binding.bottomNav.selectedItemId == R.id.nav_music) {
-                    musicAdapter.submitList(allMusic)
-                    showEmpty(allMusic.isEmpty(), getString(R.string.no_music))
-                }
-            }
-        }
-    }
+    // ── Permissions ───────────────────────────────────────────────────────────
 
     private fun checkPermissions() {
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO)
-        } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
+        val permissions = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.READ_MEDIA_VIDEO)
+                add(Manifest.permission.READ_MEDIA_AUDIO)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    add(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }.toTypedArray()
+
         val allGranted = permissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
-        if (allGranted) {
-            viewModel.loadVideos()
-            loadMusicIfGranted()
+        if (allGranted) viewModel.loadVideos()
+        else permissionLauncher.launch(permissions)
+    }
+
+    override fun onBackPressed() {
+        if (isSearchVisible) {
+            toggleSearch(false)
+            viewModel.setSearchQuery("")
         } else {
-            permissionLauncher.launch(permissions)
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
         }
-    }
-
-    private fun openPlayer(video: VideoItem) {
-        startActivity(Intent(this, PlayerActivity::class.java).apply {
-            putExtra(PlayerActivity.EXTRA_URI, video.uri.toString())
-            putExtra(PlayerActivity.EXTRA_TITLE, video.displayName)
-            putExtra(PlayerActivity.EXTRA_PATH, video.path)
-            putExtra(PlayerActivity.EXTRA_DURATION, video.duration)
-        })
-    }
-
-    private fun openMusicPlayer(music: MusicItem) {
-        startActivity(Intent(this, PlayerActivity::class.java).apply {
-            putExtra(PlayerActivity.EXTRA_URI, music.uri.toString())
-            putExtra(PlayerActivity.EXTRA_TITLE, music.title.ifBlank { music.path.substringAfterLast("/") })
-            putExtra(PlayerActivity.EXTRA_PATH, music.path)
-            putExtra(PlayerActivity.EXTRA_DURATION, music.duration)
-        })
-    }
-
-    private fun showVideoOptions(video: VideoItem) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(video.displayName.substringBeforeLast("."))
-            .setItems(arrayOf(
-                getString(R.string.play),
-                getString(R.string.share),
-                getString(R.string.delete_from_history)
-            )) { _, which ->
-                when (which) {
-                    0 -> openPlayer(video)
-                    1 -> shareVideo(video)
-                    2 -> viewModel.deleteHistoryItem(video.path)
-                }
-            }.show()
-    }
-
-    private fun showMusicOptions(music: MusicItem) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(music.title.ifBlank { music.path.substringAfterLast("/") })
-            .setItems(arrayOf(getString(R.string.play), getString(R.string.share))) { _, which ->
-                when (which) {
-                    0 -> openMusicPlayer(music)
-                    1 -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                        type = "audio/*"
-                        putExtra(Intent.EXTRA_STREAM, music.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }, getString(R.string.share_via)))
-                }
-            }.show()
-    }
-
-    private fun shareVideo(video: VideoItem) {
-        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-            type = "video/*"
-            putExtra(Intent.EXTRA_STREAM, video.uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }, getString(R.string.share_via)))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (binding.bottomNav.selectedItemId == R.id.nav_local) viewModel.loadVideos()
     }
 }

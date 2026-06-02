@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Ryzix Player</string>
+  <string name="app_name">Ryzix</string>
   <!-- Nav tabs -->
   <string name="nav_local">Videos</string>
   <string name="nav_folders">Folders</string>
   <string name="nav_music">Music</string>
   <string name="nav_history">History</string>
-  <!-- Tab labels (duplicate for legacy references) -->
+  <string name="nav_settings_tab">Settings</string>
+  <!-- Tab labels -->
   <string name="tab_videos">Videos</string>
   <string name="tab_folders">Folders</string>
   <string name="tab_history">History</string>
@@ -61,6 +62,10 @@
   <string name="aspect_zoom">Zoom</string>
   <string name="aspect_16_9">16:9</string>
   <string name="aspect_4_3">4:3</string>
+  <!-- Video options menu -->
+  <string name="share_video">Share</string>
+  <string name="video_info">Info</string>
+  <string name="loop_video">Loop</string>
   <!-- Settings screen -->
   <string name="settings">Settings</string>
   <string name="section_appearance">Appearance</string>
@@ -93,6 +98,15 @@
   <string name="version">Version</string>
   <string name="about">About Ryzix Player</string>
   <string name="about_desc">Premium media player for Android</string>
+  <!-- Music player -->
+  <string name="now_playing">Now Playing</string>
+  <string name="unknown_artist">Unknown Artist</string>
+  <string name="unknown_album">Unknown Album</string>
+  <string name="shuffle">Shuffle</string>
+  <string name="repeat">Repeat</string>
+  <!-- History -->
+  <string name="recent">Recent</string>
+  <string name="see_all">See all</string>
   <!-- EQ -->
   <string name="eq_preset">Preset</string>
   <string name="eq_flat">Flat</string>

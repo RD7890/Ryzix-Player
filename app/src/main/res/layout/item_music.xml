@@ -10,33 +10,46 @@
   app:cardCornerRadius="14dp"
   app:cardElevation="0dp"
   app:strokeColor="@color/card_stroke"
-  app:strokeWidth="1dp">
+  app:strokeWidth="1dp"
+  app:rippleColor="@color/ripple_color">
 
   <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="12dp">
+    android:padding="10dp">
 
+    <!-- Album art -->
     <FrameLayout
       android:layout_width="52dp"
       android:layout_height="52dp"
-      android:background="@drawable/bg_folder_icon">
+      android:background="@drawable/bg_music_art"
+      android:clipToOutline="true"
+      android:outlineProvider="background">
 
       <ImageView
-        android:layout_width="26dp"
-        android:layout_height="26dp"
+        android:id="@+id/imgAlbumArt"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+      <ImageView
+        android:id="@+id/imgAlbumArtFallback"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center"
         android:src="@drawable/ic_music_note"
-        android:tint="@color/accent"/>
+        android:tint="@color/accent"
+        android:visibility="visible"/>
 
     </FrameLayout>
 
+    <!-- Track info -->
     <LinearLayout
       android:layout_width="0dp"
       android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
+      android:layout_marginStart="12dp"
       android:layout_marginEnd="4dp"
       android:layout_weight="1"
       android:orientation="vertical">
