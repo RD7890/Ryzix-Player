@@ -79,6 +79,40 @@ git push origin v1.0.0
 ```
 GitHub Actions will automatically build the APKs and create a GitHub Release.
 
+## 🤖 AI Build Log Integration
+
+Every CI run automatically captures the full Gradle output and commits it to the `build-logs/` folder in this repo — **no manual log download ever needed**.
+
+### Log file location & naming
+
+```
+build-logs/
+└── run-<run_number>-<version_tag>.log   e.g. run-26-v0.0.26-beta.log
+```
+
+Each log file contains:
+- Run number, version tag, date, commit SHA, and trigger event at the top
+- Full `assembleDebug` Gradle output
+- Full `assembleRelease` Gradle output
+
+Logs are committed by `github-actions[bot]` at the end of every build, whether it succeeded or failed.
+
+### How AI uses this
+
+When a build fails, an AI agent (e.g. Replit Agent) can autonomously:
+
+1. **Fetch the latest log** from `build-logs/` via the GitHub API — no file attachment needed
+2. **Parse error lines** directly (e.g. `error: attribute X not found`, `cannot find symbol`)
+3. **Apply targeted fixes** to the relevant source files
+4. **Push a new commit** to re-trigger the CI pipeline
+
+This creates a fully automated fix loop:
+```
+Build fails → Log committed to repo → AI reads log via API → AI fixes code → New build triggered
+```
+
+The AI only needs the repo URL and a PAT with `contents: write` — the rest is automatic.
+
 ## 🏗️ Architecture
 
 ```
