@@ -1,140 +1,136 @@
 name: Ryzix Player CI
 
-  on:
-    push:
-      branches: [ main ]
-      tags: [ 'v*' ]
-    pull_request:
-      branches: [ main ]
-    workflow_dispatch:
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
-  permissions:
-    contents: write
+permissions:
+  contents: write
 
-  jobs:
-    build:
-      name: Build APKs
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+jobs:
+  build:
+    name: Build APKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - uses: actions/setup-java@v4
-          with:
-            java-version: '17'
-            distribution: 'temurin'
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-        - uses: gradle/actions/setup-gradle@v4
-          with:
-            gradle-version: 8.10.2
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10.2
 
-        - name: Download Gradle wrapper jar
-          run: |
-            mkdir -p gradle/wrapper
-            curl -sL -o gradle/wrapper/gradle-wrapper.jar \
-              "https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar" || \
-            curl -sL -o gradle/wrapper/gradle-wrapper.jar \
-              "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar"
+      - name: Generate Gradle wrapper
+        run: |
+          mkdir -p gradle/wrapper
+          gradle wrapper --gradle-version 8.10.2 --distribution-type bin
 
-        - name: Make gradlew executable
-          run: chmod +x ./gradlew
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-        - name: Compute version tag
-          id: version
-          run: |
-            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-              TAG="${GITHUB_REF_NAME}"
-            else
-              COMMIT_COUNT=$(git rev-list --count HEAD)
-              TAG="v0.0.${COMMIT_COUNT}-beta"
-            fi
-            echo "TAG=${TAG}" >> $GITHUB_ENV
-            echo "tag=${TAG}" >> $GITHUB_OUTPUT
-            echo "Computed version tag: ${TAG}"
+      - name: Compute version tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            TAG="v0.0.${COMMIT_COUNT}-beta"
+          fi
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Computed version tag: ${TAG}"
 
-        - name: Generate release keystore
-          run: |
-            keytool -genkeypair \
-              -alias ryzix-key \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -keystore ${{ github.workspace }}/ryzix-signing.jks \
-              -storepass ryzix1234 \
-              -keypass ryzix1234 \
-              -dname "CN=Ryzix Player, OU=Dev, O=RD7890, L=IN, S=IN, C=IN" \
-              -noprompt
+      - name: Generate release keystore
+        run: |
+          keytool -genkeypair \
+            -alias ryzix-key \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -keystore ${{ github.workspace }}/ryzix-signing.jks \
+            -storepass ryzix1234 \
+            -keypass ryzix1234 \
+            -dname "CN=Ryzix Player, OU=Dev, O=RD7890, L=IN, S=IN, C=IN" \
+            -noprompt
 
-        - name: Build debug APK
-          run: ./gradlew assembleDebug --no-daemon
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
 
-        - name: Build release APK (R8 minified + signed)
-          env:
-            KEYSTORE_FILE: ${{ github.workspace }}/ryzix-signing.jks
-            KEYSTORE_PASSWORD: ryzix1234
-            KEY_ALIAS: ryzix-key
-            KEY_PASSWORD: ryzix1234
-          run: ./gradlew assembleRelease --no-daemon
+      - name: Build release APK (R8 minified + signed)
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/ryzix-signing.jks
+          KEYSTORE_PASSWORD: ryzix1234
+          KEY_ALIAS: ryzix-key
+          KEY_PASSWORD: ryzix1234
+        run: ./gradlew assembleRelease --no-daemon
 
-        - name: Rename APKs with version string
-          run: |
-            cp app/build/outputs/apk/debug/app-debug.apk \
-               "app/build/outputs/apk/debug/Ryzix-Player-${TAG}-debug.apk"
-            cp app/build/outputs/apk/release/app-release.apk \
-               "app/build/outputs/apk/release/Ryzix-Player-${TAG}-release.apk"
+      - name: Rename APKs with version string
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/Ryzix-Player-${TAG}-debug.apk"
+          cp app/build/outputs/apk/release/app-release.apk \
+             "app/build/outputs/apk/release/Ryzix-Player-${TAG}-release.apk"
 
-        - name: Upload debug APK artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: Ryzix-Player-${{ env.TAG }}-debug
-            path: app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
-            retention-days: 30
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ryzix-Player-${{ env.TAG }}-debug
+          path: app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
+          retention-days: 30
 
-        - name: Upload release APK artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: Ryzix-Player-${{ env.TAG }}-release
-            path: app/build/outputs/apk/release/Ryzix-Player-*-release.apk
-            retention-days: 30
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ryzix-Player-${{ env.TAG }}-release
+          path: app/build/outputs/apk/release/Ryzix-Player-*-release.apk
+          retention-days: 30
 
-        - name: Run unit tests
-          run: ./gradlew test --no-daemon
+      - name: Run unit tests
+        run: ./gradlew test --no-daemon
 
-        - name: Publish GitHub Release
-          if: >
-            github.event_name == 'push' &&
-            (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-          uses: softprops/action-gh-release@v2
-          with:
-            tag_name: ${{ env.TAG }}
-            name: "Ryzix Player ${{ env.TAG }}"
-            body: |
-              ## Ryzix Player ${{ env.TAG }}
+      - name: Publish GitHub Release
+        if: >
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: "Ryzix Player ${{ env.TAG }}"
+          body: |
+            ## Ryzix Player ${{ env.TAG }}
 
-              **Automated release — R8 minified, signed with release key**
+            **Automated release — R8 minified, signed with release key**
 
-              ### Downloads
-              | File | Description |
-              |------|-------------|
-              | `*-release.apk` | ✅ Install this — optimised, R8 minified |
-              | `*-debug.apk` | 🐛 Debug build with verbose logging |
+            ### Downloads
+            | File | Description |
+            |------|-------------|
+            | `*-release.apk` | ✅ Install this — optimised, R8 minified |
+            | `*-debug.apk` | 🐛 Debug build with verbose logging |
 
-              ### How to install
-              1. Download `*-release.apk` below
-              2. Transfer to your phone
-              3. Open it → tap **Install** (enable *Install unknown apps* if prompted)
+            ### How to install
+            1. Download `*-release.apk` below
+            2. Transfer to your phone
+            3. Open it → tap **Install** (enable *Install unknown apps* if prompted)
 
-              ### Requirements
-              Android 7.0 (API 24) or higher
+            ### Requirements
+            Android 7.0 (API 24) or higher
 
-              ---
-              Commit: `${{ github.sha }}` · Build #${{ github.run_number }}
-            draft: false
-            prerelease: ${{ contains(env.TAG, 'alpha') || contains(env.TAG, 'beta') }}
-            files: |
-              app/build/outputs/apk/release/Ryzix-Player-*-release.apk
-              app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+            ---
+            Commit: `${{ github.sha }}` · Build #${{ github.run_number }}
+          draft: false
+          prerelease: ${{ contains(env.TAG, 'alpha') || contains(env.TAG, 'beta') }}
+          files: |
+            app/build/outputs/apk/release/Ryzix-Player-*-release.apk
+            app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

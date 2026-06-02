@@ -1,25 +1,25 @@
 package com.ryzix.player
 
-  import android.app.Application
-  import coil.Coil
-  import coil.ImageLoader
-  import coil.decode.VideoFrameDecoder
-  import coil.request.CachePolicy
+import android.app.Application
+import coil.Coil
+import coil.ImageLoader
+import coil.decode.VideoFrameDecoder
+import coil.request.CachePolicy
 
-  class App : Application() {
+class App : Application() {
 
-      override fun onCreate() {
-          super.onCreate()
+    override fun onCreate() {
+        super.onCreate()
 
-          val imageLoader = ImageLoader.Builder(this)
-              .components {
-                  add(VideoFrameDecoder.Factory())
-              }
-              .diskCachePolicy(CachePolicy.ENABLED)
-              .memoryCachePolicy(CachePolicy.ENABLED)
-              .crossfade(true)
-              .build()
+        val imageLoader = ImageLoader.Builder(this)
+            .components {
+                add(VideoFrameDecoder.Factory())
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .crossfade(true)
+            .build()
 
-          Coil.setImageLoader(imageLoader)
-      }
-  }
+        Coil.setImageLoader(imageLoader)
+    }
+}
