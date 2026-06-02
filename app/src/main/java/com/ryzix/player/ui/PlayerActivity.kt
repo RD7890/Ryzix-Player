@@ -313,7 +313,7 @@ class PlayerActivity : AppCompatActivity() {
             val sessionId = player?.audioSessionId ?: 0
             releaseAudioEffects() // sheet will own the effects while open
             val sheet = EqualizerBottomSheet.newInstance(sessionId)
-            sheet.setOnDismissListener {
+            sheet.onDismissListener = {
                 // Re-attach effects after sheet closes
                 player?.audioSessionId?.let { sid ->
                     if (sid != 0) { initAudioEffects(sid); restoreSavedEq(sid) }

@@ -9,12 +9,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
+import android.content.DialogInterface
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ryzix.player.R
 import com.ryzix.player.databinding.BottomSheetEqualizerBinding
 
 class EqualizerBottomSheet : BottomSheetDialogFragment() {
+
+    var onDismissListener: (() -> Unit)? = null
 
     private var _binding: BottomSheetEqualizerBinding? = null
     private val binding get() = _binding!!
@@ -183,6 +186,11 @@ class EqualizerBottomSheet : BottomSheetDialogFragment() {
             val db = (v - 50) * 15 / 50
             labels[i].text = if (db >= 0) "+$db" else "$db"
         }
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        onDismissListener?.invoke()
     }
 
     override fun onDestroyView() {

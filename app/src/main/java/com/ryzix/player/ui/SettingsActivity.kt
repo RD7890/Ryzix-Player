@@ -11,6 +11,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ryzix.player.R
 import com.ryzix.player.databinding.ActivitySettingsBinding
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -146,7 +149,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun clearHistory() {
         // Delete via Room database — use coroutine
         val db = com.ryzix.player.db.AppDatabase.getInstance(applicationContext)
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
             db.watchHistoryDao().clearAll()
         }
     }
