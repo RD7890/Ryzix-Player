@@ -7,7 +7,6 @@ plugins {
 }
 
 // ─── Git-based versioning ─────────────────────────────────────────────────
-// Runs a shell command from the repo root; returns null on any failure.
 fun String.runCommand(workingDir: File = rootDir): String? = try {
     ProcessBuilder(*trim().split("\\s+".toRegex()).toTypedArray())
         .directory(workingDir)
@@ -20,13 +19,23 @@ fun String.runCommand(workingDir: File = rootDir): String? = try {
         .takeIf { it.isNotEmpty() }
 } catch (_: Exception) { null }
 
-// versionCode  = total commit count — auto-increments on every commit
 val gitCommitCount: Int =
     "git rev-list --count HEAD".runCommand()?.toIntOrNull() ?: 1
 
-// versionName  = git describe output, e.g. "v0.0.17-alpha" or "v0.0.17-alpha-3-gabcdef"
 val gitVersionName: String =
     "git describe --tags --always --dirty".runCommand() ?: "dev"
+
+// ─── Keystore resolution ───────────────────────────────────────────────────
+// Priority: env var (CI) → committed keystore (local dev)
+val keystorePath: String? = System.getenv("KEYSTORE_FILE")
+    ?.takeIf { file(it).exists() }
+    ?: run {
+        val committed = file("signing/ryzix-signing.p12")
+        if (committed.exists()) committed.absolutePath else null
+    }
+val keystorePassword: String = System.getenv("KEYSTORE_PASSWORD") ?: "ryzix1234"
+val keyAlias: String        = System.getenv("KEY_ALIAS")          ?: "ryzix-key"
+val keyPassword: String     = System.getenv("KEY_PASSWORD")        ?: "ryzix1234"
 
 android {
     namespace = "com.ryzix.player"
@@ -48,13 +57,16 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val keystoreFile = System.getenv("KEYSTORE_FILE")
-            if (keystoreFile != null && file(keystoreFile).exists()) {
-                storeFile = file(keystoreFile)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
+        // Single stable config used by both debug and release builds.
+        // This prevents "App not installed — package conflict" when sideloading
+        // because the same key is always used regardless of CI run.
+        create("stable") {
+            if (keystorePath != null) {
+                storeFile     = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias      = keyAlias
+                keyPassword   = keyPassword
+                // ryzix-signing.p12 is PKCS12; AGP 8+ auto-detects the format.
             }
         }
     }
@@ -62,19 +74,21 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-            isDebuggable = true
+            versionNameSuffix   = "-debug"
+            isDebuggable        = true
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("stable")
+            }
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled    = true
+            isShrinkResources  = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            val keystoreFile = System.getenv("KEYSTORE_FILE")
-            if (keystoreFile != null && file(keystoreFile).exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("stable")
             }
         }
     }
@@ -89,8 +103,8 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
-        buildConfig = true
+        viewBinding  = true
+        buildConfig  = true
     }
 }
 

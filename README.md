@@ -2,11 +2,14 @@
   <h1>🎬 Ryzix Player</h1>
   <p><strong>A powerful Android video player like MX Player, built with Kotlin & Media3/ExoPlayer</strong></p>
 
-  <img src="https://img.shields.io/github/v/release/RD7890/Ryzix-Player?style=for-the-badge&color=6200EE" />
-  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android" />
-  <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=for-the-badge&logo=kotlin" />
-  <img src="https://img.shields.io/badge/Min%20SDK-24-orange?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
+  <a href="https://github.com/RD7890/Ryzix-Player/actions/workflows/ci.yml">
+    <img src="https://github.com/RD7890/Ryzix-Player/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
+  </a>
+  <img src="https://img.shields.io/github/v/release/RD7890/Ryzix-Player?style=flat-square&color=6200EE" />
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android" />
+  <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin" />
+  <img src="https://img.shields.io/badge/Min%20SDK-24-orange?style=flat-square" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
 </div>
 
 ---
@@ -44,29 +47,29 @@
 # Debug APK
 ./gradlew assembleDebug
 
-# Release APK (needs signing config — see below)
+# Release APK
 ./gradlew assembleRelease
 
 # Run unit tests
 ./gradlew test
 ```
 
-## 🔑 Release Signing (GitHub Actions)
+## 🔑 Signing
 
-Add these secrets to your repository (`Settings → Secrets → Actions`):
+A stable PKCS12 keystore is committed at `app/signing/ryzix-signing.b64` (base64-encoded).  
+CI decodes it at build time — **every build uses the same key**, so you never see  
+"App not installed as package conflicts with an existing package" when sideloading updates.
 
-| Secret | Description |
-|--------|-------------|
-| `KEYSTORE_BASE64` | Base64-encoded `.jks` keystore file |
-| `KEYSTORE_PASSWORD` | Keystore password |
-| `KEY_ALIAS` | Key alias |
-| `KEY_PASSWORD` | Key password |
+The keystore credentials are:
 
-To generate a keystore:
-```bash
-keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias ryzix
-base64 -i release.jks | pbcopy   # macOS — copies to clipboard
-```
+| Field | Value |
+|-------|-------|
+| Alias | `ryzix-key` |
+| Store password | `ryzix1234` |
+| Key password | `ryzix1234` |
+
+> For local builds the Gradle script auto-discovers `app/signing/ryzix-signing.p12` if present.
+> Decode it once with: `base64 -d app/signing/ryzix-signing.b64 > app/signing/ryzix-signing.p12`
 
 ## 📦 Creating a Release
 
@@ -74,7 +77,7 @@ base64 -i release.jks | pbcopy   # macOS — copies to clipboard
 git tag v1.0.0
 git push origin v1.0.0
 ```
-GitHub Actions will automatically build the APK and create a release.
+GitHub Actions will automatically build the APKs and create a GitHub Release.
 
 ## 🏗️ Architecture
 

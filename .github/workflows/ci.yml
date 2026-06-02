@@ -37,6 +37,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Decode stable signing keystore
+        run: |
+          base64 -d app/signing/ryzix-signing.b64 > app/signing/ryzix-signing.p12
+          echo "KEYSTORE_FILE=${{ github.workspace }}/app/signing/ryzix-signing.p12" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=ryzix1234"  >> $GITHUB_ENV
+          echo "KEY_ALIAS=ryzix-key"           >> $GITHUB_ENV
+          echo "KEY_PASSWORD=ryzix1234"         >> $GITHUB_ENV
+
       - name: Compute version tag
         id: version
         run: |
@@ -50,28 +58,10 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Computed version tag: ${TAG}"
 
-      - name: Generate release keystore
-        run: |
-          keytool -genkeypair \
-            -alias ryzix-key \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -keystore ${{ github.workspace }}/ryzix-signing.jks \
-            -storepass ryzix1234 \
-            -keypass ryzix1234 \
-            -dname "CN=Ryzix Player, OU=Dev, O=RD7890, L=IN, S=IN, C=IN" \
-            -noprompt
-
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Build release APK (R8 minified + signed)
-        env:
-          KEYSTORE_FILE: ${{ github.workspace }}/ryzix-signing.jks
-          KEYSTORE_PASSWORD: ryzix1234
-          KEY_ALIAS: ryzix-key
-          KEY_PASSWORD: ryzix1234
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename APKs with version string
@@ -109,7 +99,7 @@ jobs:
           body: |
             ## Ryzix Player ${{ env.TAG }}
 
-            **Automated release — R8 minified, signed with release key**
+            **Automated release — R8 minified, signed with stable release key**
 
             ### Downloads
             | File | Description |
@@ -121,6 +111,7 @@ jobs:
             1. Download `*-release.apk` below
             2. Transfer to your phone
             3. Open it → tap **Install** (enable *Install unknown apps* if prompted)
+            4. Future updates install directly without uninstalling first ✅
 
             ### Requirements
             Android 7.0 (API 24) or higher
