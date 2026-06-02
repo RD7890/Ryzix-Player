@@ -58,11 +58,18 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Computed version tag: ${TAG}"
 
+      - name: Prepare log folder
+        run: mkdir -p build-logs
+
       - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          ./gradlew assembleDebug --no-daemon 2>&1 | tee build-logs/debug-build.log
+          exit ${PIPESTATUS[0]}
 
       - name: Build release APK (R8 minified + signed)
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          ./gradlew assembleRelease --no-daemon 2>&1 | tee build-logs/release-build.log
+          exit ${PIPESTATUS[0]}
 
       - name: Rename APKs with version string
         run: |
@@ -88,6 +95,41 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test --no-daemon
 
+      - name: Save build logs to repo
+        if: always()
+        run: |
+          mkdir -p build-logs
+
+          LOG_FILE="build-logs/run-${{ github.run_number }}-${TAG}.log"
+
+          {
+            echo "=================================================="
+            echo "  Ryzix Player - Build Log"
+            echo "  Run:     #${{ github.run_number }}"
+            echo "  Version: ${TAG}"
+            echo "  Date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "  Commit:  ${{ github.sha }}"
+            echo "  Trigger: ${{ github.event_name }}"
+            echo "=================================================="
+            echo ""
+            echo "## DEBUG BUILD"
+            echo "--------------------------------------------------"
+            cat build-logs/debug-build.log 2>/dev/null || echo "(debug build did not run)"
+            echo ""
+            echo "## RELEASE BUILD"
+            echo "--------------------------------------------------"
+            cat build-logs/release-build.log 2>/dev/null || echo "(release build did not run)"
+          } > "${LOG_FILE}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add build-logs/
+          git diff --cached --quiet || git commit -m "ci(logs): run #${{ github.run_number }} - ${TAG}"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish GitHub Release
         if: >
           github.event_name == 'push' &&
@@ -99,25 +141,25 @@ jobs:
           body: |
             ## Ryzix Player ${{ env.TAG }}
 
-            **Automated release — R8 minified, signed with stable release key**
+            **Automated release - R8 minified, signed with stable release key**
 
             ### Downloads
             | File | Description |
             |------|-------------|
-            | `*-release.apk` | ✅ Install this — optimised, R8 minified |
-            | `*-debug.apk` | 🐛 Debug build with verbose logging |
+            | `*-release.apk` | Install this - optimised, R8 minified |
+            | `*-debug.apk` | Debug build with verbose logging |
 
             ### How to install
             1. Download `*-release.apk` below
             2. Transfer to your phone
-            3. Open it → tap **Install** (enable *Install unknown apps* if prompted)
-            4. Future updates install directly without uninstalling first ✅
+            3. Open it, tap Install (enable Install unknown apps if prompted)
+            4. Future updates install directly without uninstalling first
 
             ### Requirements
             Android 7.0 (API 24) or higher
 
             ---
-            Commit: `${{ github.sha }}` · Build #${{ github.run_number }}
+            Commit: `${{ github.sha }}` - Build #${{ github.run_number }}
           draft: false
           prerelease: ${{ contains(env.TAG, 'alpha') || contains(env.TAG, 'beta') }}
           files: |
