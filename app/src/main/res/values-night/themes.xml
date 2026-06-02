@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.RyzixPlayer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:colorBackground">@color/background</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnPrimary">@color/on_primary</item>
-        <item name="colorOnSurface">@color/on_surface</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/bottom_nav_bg</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
-</resources>
+  <resources>
+      <style name="Theme.RyzixPlayer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+          <item name="colorPrimary">@color/primary</item>
+          <item name="colorPrimaryDark">@color/primary_dark</item>
+          <item name="colorAccent">@color/accent</item>
+          <item name="android:colorBackground">@color/background</item>
+          <item name="colorSurface">@color/surface</item>
+          <item name="colorOnPrimary">@color/on_primary</item>
+          <item name="colorOnSurface">@color/on_surface</item>
+          <item name="android:statusBarColor">@color/toolbar_bg</item>
+          <item name="android:navigationBarColor">@color/bottom_nav_bg</item>
+          <item name="android:windowLightStatusBar">false</item>
+      </style>
+  </resources>

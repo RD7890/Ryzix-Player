@@ -1,95 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/background">
+  <androidx.coordinatorlayout.widget.CoordinatorLayout
+      xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:background="@color/background">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/primary_dark">
+      <com.google.android.material.appbar.AppBarLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:background="@color/toolbar_bg">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary_dark"
-            app:titleTextColor="@color/on_primary"
-            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark" />
+          <androidx.appcompat.widget.Toolbar
+              android:id="@+id/toolbar"
+              android:layout_width="match_parent"
+              android:layout_height="?attr/actionBarSize"
+              android:background="@color/toolbar_bg"
+              app:titleTextColor="@color/on_primary"
+              app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark" />
 
-    </com.google.android.material.appbar.AppBarLayout>
+      </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="24dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:orientation="vertical"
+          android:padding="24dp"
+          app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/enter_url_hint"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            app:boxStrokeColor="@color/accent"
-            app:hintTextColor="@color/on_surface_variant">
+          <com.google.android.material.textfield.TextInputLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:hint="@string/enter_url_hint"
+              style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+              app:boxStrokeColor="@color/accent"
+              app:hintTextColor="@color/on_surface_variant">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etUrl"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:textColor="@color/on_surface"
-                android:imeOptions="actionDone" />
+              <com.google.android.material.textfield.TextInputEditText
+                  android:id="@+id/etUrl"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:inputType="textUri"
+                  android:textColor="@color/on_surface"
+                  android:imeOptions="actionDone" />
 
-        </com.google.android.material.textfield.TextInputLayout>
+          </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Quick presets -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Quick presets"
-            android:textColor="@color/on_surface_variant"
-            android:textSize="13sp" />
+          <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="16dp"
+              android:text="Quick presets"
+              android:textColor="@color/on_surface_variant"
+              android:textSize="13sp" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
+          <com.google.android.material.chip.ChipGroup
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="8dp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipHls"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="HLS Sample"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/surface_variant"
-                android:textColor="@color/on_surface" />
+              <com.google.android.material.chip.Chip
+                  android:id="@+id/chipHls"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="HLS Sample"
+                  style="@style/Widget.MaterialComponents.Chip.Action"
+                  app:chipBackgroundColor="@color/surface_variant"
+                  android:textColor="@color/on_surface" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipDash"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="DASH Sample"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                app:chipBackgroundColor="@color/surface_variant"
-                android:textColor="@color/on_surface" />
+              <com.google.android.material.chip.Chip
+                  android:id="@+id/chipDash"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="DASH Sample"
+                  style="@style/Widget.MaterialComponents.Chip.Action"
+                  app:chipBackgroundColor="@color/surface_variant"
+                  android:textColor="@color/on_surface" />
 
-        </com.google.android.material.chip.ChipGroup>
+          </com.google.android.material.chip.ChipGroup>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPlay"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="24dp"
-            android:text="@string/play"
-            android:textSize="16sp"
-            app:backgroundTint="@color/accent"
-            app:cornerRadius="12dp" />
+          <com.google.android.material.button.MaterialButton
+              android:id="@+id/btnPlay"
+              android:layout_width="match_parent"
+              android:layout_height="56dp"
+              android:layout_marginTop="24dp"
+              android:text="@string/play"
+              android:textSize="16sp"
+              app:backgroundTint="@color/accent"
+              app:cornerRadius="12dp" />
 
-    </LinearLayout>
+      </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+  </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,38 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Light theme base colors -->
-    <color name="primary">#C62828</color>
-    <color name="primary_dark">#B71C1C</color>
-    <color name="accent">#E53935</color>
-    <color name="accent_dark">#C62828</color>
-    <color name="background">#F2F2F2</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="surface_variant">#F5F5F5</color>
-    <color name="surface_elevated">#FFFFFF</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="on_surface">#1C1B1F</color>
-    <color name="on_surface_variant">#49454F</color>
-    <color name="divider">#E0E0E0</color>
-    <color name="search_bg">#FFFFFF</color>
-    <color name="search_text">#1C1B1F</color>
-    <color name="search_hint">#79747E</color>
-    <color name="toolbar_bg">#C62828</color>
-    <color name="bottom_nav_bg">#FFFFFF</color>
-    <color name="bottom_nav_indicator">#FFDAD6</color>
-    <color name="card_bg">#FFFFFF</color>
-    <color name="card_stroke">#E0E0E0</color>
-
-    <!-- Player overlay (always dark — video is black bg) -->
-    <color name="player_overlay">#99000000</color>
-    <color name="player_controls_bg">#CC000000</color>
-    <color name="seek_bar_progress">#E53935</color>
-    <color name="seek_bar_thumb">#E53935</color>
-    <color name="seek_bar_secondary">#66E53935</color>
-    <color name="indicator_bg">#CC000000</color>
-
-    <!-- Status colors -->
-    <color name="green">#4CAF50</color>
-    <color name="red">#F44336</color>
-    <color name="yellow">#FFC107</color>
-    <color name="transparent">#00000000</color>
-</resources>
+  <resources>
+      <color name="primary">#FF2541</color>
+      <color name="primary_dark">#CC1F35</color>
+      <color name="accent">#FF2541</color>
+      <color name="accent_dark">#CC1F35</color>
+      <color name="background">#F5F5F7</color>
+      <color name="surface">#FFFFFF</color>
+      <color name="surface_variant">#F0F0F2</color>
+      <color name="surface_elevated">#FFFFFF</color>
+      <color name="on_primary">#FFFFFF</color>
+      <color name="on_surface">#111111</color>
+      <color name="on_surface_variant">#6B6B6B</color>
+      <color name="divider">#EBEBEB</color>
+      <color name="search_bg">#EFEFEF</color>
+      <color name="search_text">#111111</color>
+      <color name="search_hint">#9A9A9A</color>
+      <color name="toolbar_bg">#FF2541</color>
+      <color name="bottom_nav_bg">#FFFFFF</color>
+      <color name="bottom_nav_indicator">#FFECEE</color>
+      <color name="card_bg">#FFFFFF</color>
+      <color name="card_stroke">#EBEBEB</color>
+      <color name="player_overlay">#99000000</color>
+      <color name="player_controls_bg">#CC000000</color>
+      <color name="seek_bar_progress">#FF2541</color>
+      <color name="seek_bar_thumb">#FF2541</color>
+      <color name="seek_bar_secondary">#66FF2541</color>
+      <color name="indicator_bg">#CC000000</color>
+      <color name="green">#4CAF50</color>
+      <color name="red">#F44336</color>
+      <color name="yellow">#FFC107</color>
+      <color name="transparent">#00000000</color>
+  </resources>

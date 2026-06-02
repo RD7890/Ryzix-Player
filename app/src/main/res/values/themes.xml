@@ -1,55 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.RyzixPlayer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:colorBackground">@color/background</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnPrimary">@color/on_primary</item>
-        <item name="colorOnSurface">@color/on_surface</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/bottom_nav_bg</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="materialAlertDialogTheme">@style/Theme.RyzixPlayer.Dialog</item>
-        <item name="bottomNavigationStyle">@style/Widget.RyzixPlayer.BottomNavigation</item>
-    </style>
+  <resources>
+      <style name="Theme.RyzixPlayer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+          <item name="colorPrimary">@color/primary</item>
+          <item name="colorPrimaryDark">@color/primary_dark</item>
+          <item name="colorAccent">@color/accent</item>
+          <item name="android:colorBackground">@color/background</item>
+          <item name="colorSurface">@color/surface</item>
+          <item name="colorOnPrimary">@color/on_primary</item>
+          <item name="colorOnSurface">@color/on_surface</item>
+          <item name="android:statusBarColor">@color/toolbar_bg</item>
+          <item name="android:navigationBarColor">@color/bottom_nav_bg</item>
+          <item name="android:windowLightStatusBar">false</item>
+          <item name="android:windowAnimationStyle">@style/Animation.RyzixPlayer.Activity</item>
+          <item name="materialAlertDialogTheme">@style/Theme.RyzixPlayer.Dialog</item>
+          <item name="bottomNavigationStyle">@style/Widget.RyzixPlayer.BottomNavigation</item>
+      </style>
 
-    <style name="Theme.RyzixPlayer.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">@color/primary_dark</item>
-    </style>
+      <style name="Theme.RyzixPlayer.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+          <item name="android:windowFullscreen">true</item>
+          <item name="android:windowBackground">@android:color/black</item>
+      </style>
 
-    <style name="Theme.RyzixPlayer.Player" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-    </style>
+      <style name="Theme.RyzixPlayer.Player" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+          <item name="android:windowFullscreen">true</item>
+          <item name="android:windowBackground">@android:color/black</item>
+          <item name="android:statusBarColor">@android:color/transparent</item>
+          <item name="android:navigationBarColor">@android:color/transparent</item>
+          <item name="android:windowAnimationStyle">@style/Animation.RyzixPlayer.Player</item>
+      </style>
 
-    <style name="Theme.RyzixPlayer.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
-        <item name="colorPrimary">@color/accent</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:colorBackground">@color/surface</item>
-        <item name="colorOnSurface">@color/on_surface</item>
-    </style>
+      <style name="Theme.RyzixPlayer.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+          <item name="colorPrimary">@color/accent</item>
+          <item name="colorAccent">@color/accent</item>
+          <item name="android:colorBackground">@color/surface</item>
+          <item name="colorOnSurface">@color/on_surface</item>
+      </style>
 
-    <style name="Widget.RyzixPlayer.BottomNavigation" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="android:background">@color/bottom_nav_bg</item>
-        <item name="itemActiveIndicatorStyle">@style/Widget.RyzixPlayer.BottomNavigation.Indicator</item>
-        <item name="itemIconTint">@color/bottom_nav_item_color</item>
-        <item name="itemTextColor">@color/bottom_nav_item_color</item>
-        <item name="elevation">8dp</item>
-    </style>
+      <style name="Widget.RyzixPlayer.BottomNavigation" parent="Widget.MaterialComponents.BottomNavigationView">
+          <item name="android:background">@color/bottom_nav_bg</item>
+          <item name="itemActiveIndicatorStyle">@style/Widget.RyzixPlayer.BottomNavigation.Indicator</item>
+          <item name="itemIconTint">@color/bottom_nav_item_color</item>
+          <item name="itemTextColor">@color/bottom_nav_item_color</item>
+          <item name="elevation">8dp</item>
+      </style>
 
-    <style name="Widget.RyzixPlayer.BottomNavigation.Indicator">
-        <item name="android:color">@color/bottom_nav_indicator</item>
-    </style>
+      <style name="Widget.RyzixPlayer.BottomNavigation.Indicator">
+          <item name="android:color">@color/bottom_nav_indicator</item>
+      </style>
 
-    <style name="SeekBar.Player" parent="Widget.AppCompat.SeekBar">
-        <item name="android:progressTint">@color/seek_bar_progress</item>
-        <item name="android:thumbTint">@color/seek_bar_thumb</item>
-        <item name="android:secondaryProgressTint">@color/seek_bar_secondary</item>
-        <item name="android:progressBackgroundTint">#44FFFFFF</item>
-    </style>
-</resources>
+      <style name="SeekBar.Player" parent="Widget.AppCompat.SeekBar">
+          <item name="android:progressTint">@color/seek_bar_progress</item>
+          <item name="android:thumbTint">@color/seek_bar_thumb</item>
+          <item name="android:secondaryProgressTint">@color/seek_bar_secondary</item>
+          <item name="android:progressBackgroundTint">#44FFFFFF</item>
+      </style>
+
+      <style name="Animation.RyzixPlayer.Activity" parent="@android:style/Animation.Activity">
+          <item name="android:activityOpenEnterAnimation">@anim/slide_in_right</item>
+          <item name="android:activityOpenExitAnimation">@anim/slide_out_left</item>
+          <item name="android:activityCloseEnterAnimation">@anim/slide_in_left</item>
+          <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
+      </style>
+
+      <style name="Animation.RyzixPlayer.Player" parent="@android:style/Animation.Activity">
+          <item name="android:activityOpenEnterAnimation">@anim/fade_in</item>
+          <item name="android:activityOpenExitAnimation">@anim/fade_out</item>
+          <item name="android:activityCloseEnterAnimation">@anim/fade_in</item>
+          <item name="android:activityCloseExitAnimation">@anim/fade_out</item>
+      </style>
+  </resources>

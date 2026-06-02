@@ -1,65 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="4dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:rippleColor="@color/accent">
+  <com.google.android.material.card.MaterialCardView
+      xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      android:layout_marginVertical="4dp"
+      app:cardBackgroundColor="@color/surface"
+      app:cardCornerRadius="14dp"
+      app:cardElevation="2dp"
+      app:rippleColor="@color/accent">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="12dp">
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center_vertical"
+          android:orientation="horizontal"
+          android:padding="12dp">
 
-        <ImageView
-            android:id="@+id/imgFolderThumb"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:background="@color/surface_variant"
-            android:contentDescription="Folder thumbnail"
-            android:scaleType="centerCrop" />
+          <FrameLayout
+              android:layout_width="56dp"
+              android:layout_height="56dp"
+              android:background="@drawable/bg_folder_icon">
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+              <ImageView
+                  android:id="@+id/imgFolderThumb"
+                  android:layout_width="30dp"
+                  android:layout_height="30dp"
+                  android:layout_gravity="center"
+                  android:src="@drawable/ic_folder_thumb"
+                  android:tint="@color/primary"
+                  android:contentDescription="Folder thumbnail"
+                  android:scaleType="centerInside" />
 
-            <TextView
-                android:id="@+id/tvFolderName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/on_surface"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+          </FrameLayout>
 
-            <TextView
-                android:id="@+id/tvVideoCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="12sp" />
+          <LinearLayout
+              android:layout_width="0dp"
+              android:layout_height="wrap_content"
+              android:layout_marginStart="14dp"
+              android:layout_weight="1"
+              android:orientation="vertical">
 
-        </LinearLayout>
+              <TextView
+                  android:id="@+id/tvFolderName"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:ellipsize="end"
+                  android:maxLines="1"
+                  android:textColor="@color/on_surface"
+                  android:textSize="15sp"
+                  android:textStyle="bold" />
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_chevron_right"
-            android:tint="@color/on_surface_variant"
-            android:contentDescription="Open folder" />
+              <TextView
+                  android:id="@+id/tvVideoCount"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="4dp"
+                  android:textColor="@color/on_surface_variant"
+                  android:textSize="12sp" />
 
-    </LinearLayout>
+          </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+          <ImageView
+              android:layout_width="20dp"
+              android:layout_height="20dp"
+              android:src="@drawable/ic_chevron_right"
+              android:tint="@color/on_surface_variant"
+              android:contentDescription="Open folder" />
+
+      </LinearLayout>
+
+  </com.google.android.material.card.MaterialCardView>
