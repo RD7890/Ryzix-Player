@@ -12,37 +12,9 @@ permissions:
   contents: write
 
 jobs:
-  # ── Runs only on direct pushes to main ────────────────────────────────────
-  # Creates a version tag (e.g. v0.0.17-alpha) which then triggers the build job.
-  create-tag:
-    name: Auto-tag commit
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Compute build number and push tag
-        run: |
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          AUTO_TAG="v0.0.${COMMIT_COUNT}-alpha"
-          echo "Tagging HEAD as ${AUTO_TAG}"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git tag -f "${AUTO_TAG}" HEAD
-          git push origin "${AUTO_TAG}" --force
-
-  # ── Runs on tag pushes, PRs, and manual dispatch ──────────────────────────
-  # Builds debug + release APKs, uploads artifacts, publishes a GitHub Release
-  # on every tag push (which create-tag fires automatically on every main push).
   build:
     name: Build APKs
     runs-on: ubuntu-latest
-    if: >
-      startsWith(github.ref, 'refs/tags/v') ||
-      github.event_name == 'pull_request' ||
-      github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +39,23 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
+
+      # Compute TAG for naming and releasing.
+      # • Tag push  → use the pushed tag as-is.
+      # • main push → derive v0.0.<commitCount>-alpha (release action creates the tag).
+      # • PR / dispatch → version string only, no release published.
+      - name: Compute version tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            TAG="v0.0.${COMMIT_COUNT}-alpha"
+          fi
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Computed version tag: ${TAG}"
 
       - name: Generate release keystore
         run: |
@@ -94,37 +83,42 @@ jobs:
 
       - name: Rename APKs with version string
         run: |
-          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
           cp app/build/outputs/apk/debug/app-debug.apk \
-             "app/build/outputs/apk/debug/Ryzix-Player-${VERSION}-debug.apk"
+             "app/build/outputs/apk/debug/Ryzix-Player-${TAG}-debug.apk"
           cp app/build/outputs/apk/release/app-release.apk \
-             "app/build/outputs/apk/release/Ryzix-Player-${VERSION}-release.apk"
+             "app/build/outputs/apk/release/Ryzix-Player-${TAG}-release.apk"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Ryzix-Player-debug
+          name: Ryzix-Player-${{ env.TAG }}-debug
           path: app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
           retention-days: 30
 
       - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Ryzix-Player-release
+          name: Ryzix-Player-${{ env.TAG }}-release
           path: app/build/outputs/apk/release/Ryzix-Player-*-release.apk
           retention-days: 30
 
       - name: Run unit tests
         run: ./gradlew test --no-daemon
 
+      # Publish a GitHub Release on every push to main AND every tag push.
+      # softprops/action-gh-release creates the git tag automatically if it
+      # doesn't exist yet (no separate tag push needed, avoids GITHUB_TOKEN
+      # self-trigger limitation that prevents tag-push → build cascades).
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: >
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
-          name: "Ryzix Player ${{ github.ref_name }}"
+          tag_name: ${{ env.TAG }}
+          name: "Ryzix Player ${{ env.TAG }}"
           body: |
-            ## Ryzix Player ${{ github.ref_name }}
+            ## Ryzix Player ${{ env.TAG }}
 
             **Automated release — R8 minified, signed with release key**
 
@@ -145,7 +139,7 @@ jobs:
             ---
             Commit: `${{ github.sha }}` · Build #${{ github.run_number }}
           draft: false
-          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
+          prerelease: ${{ contains(env.TAG, 'alpha') || contains(env.TAG, 'beta') }}
           files: |
             app/build/outputs/apk/release/Ryzix-Player-*-release.apk
             app/build/outputs/apk/debug/Ryzix-Player-*-debug.apk
