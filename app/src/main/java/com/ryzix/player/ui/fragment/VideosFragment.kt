@@ -57,7 +57,7 @@ class VideosFragment : Fragment() {
         )
 
         val concatAdapter = ConcatAdapter(
-            ConcatAdapter.Config.Builder().setIsolateViewTypes(false).build(),
+            ConcatAdapter.Config.Builder().setIsolateViewTypes(true).build(),
             sectionHeaderAdapter,
             videoAdapter
         )
