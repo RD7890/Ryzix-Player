@@ -3,7 +3,7 @@ name: Ryzix Player CI
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*.*.*' ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -12,9 +12,37 @@ permissions:
   contents: write
 
 jobs:
+  # ── Runs only on direct pushes to main ────────────────────────────────────
+  # Creates a version tag (e.g. v0.0.17-alpha) which then triggers the build job.
+  create-tag:
+    name: Auto-tag commit
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute build number and push tag
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          AUTO_TAG="v0.0.${COMMIT_COUNT}-alpha"
+          echo "Tagging HEAD as ${AUTO_TAG}"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git tag -f "${AUTO_TAG}" HEAD
+          git push origin "${AUTO_TAG}" --force
+
+  # ── Runs on tag pushes, PRs, and manual dispatch ──────────────────────────
+  # Builds debug + release APKs, uploads artifacts, publishes a GitHub Release
+  # on every tag push (which create-tag fires automatically on every main push).
   build:
     name: Build APKs
     runs-on: ubuntu-latest
+    if: >
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +68,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Generate debug keystore (for release signing)
+      - name: Generate release keystore
         run: |
           keytool -genkeypair \
             -alias ryzix-key \
@@ -56,7 +84,7 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Build release APK (R8 + signed)
+      - name: Build release APK (R8 minified + signed)
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/ryzix-signing.jks
           KEYSTORE_PASSWORD: ryzix1234
@@ -64,14 +92,14 @@ jobs:
           KEY_PASSWORD: ryzix1234
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Rename APKs
+      - name: Rename APKs with version string
         run: |
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
-          cp app/build/outputs/apk/debug/app-debug.apk \
-             app/build/outputs/apk/debug/Ryzix-Player-${VERSION}-debug.apk
-          cp app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/Ryzix-Player-${VERSION}-release.apk
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/Ryzix-Player-${VERSION}-debug.apk"
+          cp app/build/outputs/apk/release/app-release.apk \
+             "app/build/outputs/apk/release/Ryzix-Player-${VERSION}-release.apk"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
@@ -90,7 +118,7 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test --no-daemon
 
-      - name: Publish GitHub Release with APKs
+      - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
@@ -98,22 +126,24 @@ jobs:
           body: |
             ## Ryzix Player ${{ github.ref_name }}
 
-            **Automated release — R8 minified, signed**
+            **Automated release — R8 minified, signed with release key**
 
-            ### What's included
-            - `Ryzix-Player-*-release.apk` — optimised release build (install this)
-            - `Ryzix-Player-*-debug.apk` — debug build with logging
+            ### Downloads
+            | File | Description |
+            |------|-------------|
+            | `*-release.apk` | ✅ Install this — optimised, R8 minified |
+            | `*-debug.apk` | 🐛 Debug build with verbose logging |
 
-            ### Install
+            ### How to install
             1. Download `*-release.apk` below
             2. Transfer to your phone
-            3. Open it → tap **Install** (allow unknown sources if prompted)
+            3. Open it → tap **Install** (enable *Install unknown apps* if prompted)
 
             ### Requirements
             Android 7.0 (API 24) or higher
 
             ---
-            Branch: `${{ github.ref_name }}` · Commit: `${{ github.sha }}` · Run: #${{ github.run_number }}
+            Commit: `${{ github.sha }}` · Build #${{ github.run_number }}
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
           files: |

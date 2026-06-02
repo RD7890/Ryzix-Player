@@ -1,8 +1,32 @@
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
 }
+
+// ─── Git-based versioning ─────────────────────────────────────────────────
+// Runs a shell command from the repo root; returns null on any failure.
+fun String.runCommand(workingDir: File = rootDir): String? = try {
+    ProcessBuilder(*trim().split("\\s+".toRegex()).toTypedArray())
+        .directory(workingDir)
+        .redirectErrorStream(true)
+        .start()
+        .inputStream
+        .bufferedReader()
+        .readText()
+        .trim()
+        .takeIf { it.isNotEmpty() }
+} catch (_: Exception) { null }
+
+// versionCode  = total commit count — auto-increments on every commit
+val gitCommitCount: Int =
+    "git rev-list --count HEAD".runCommand()?.toIntOrNull() ?: 1
+
+// versionName  = git describe output, e.g. "v0.0.17-alpha" or "v0.0.17-alpha-3-gabcdef"
+val gitVersionName: String =
+    "git describe --tags --always --dirty".runCommand() ?: "dev"
 
 android {
     namespace = "com.ryzix.player"
@@ -12,8 +36,8 @@ android {
         applicationId = "com.ryzix.player"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = gitCommitCount
+        versionName = gitVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
