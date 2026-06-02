@@ -1,9 +1,15 @@
 package com.ryzix.player.ui
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
+import android.app.PendingIntent
 import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +23,7 @@ import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -61,6 +68,13 @@ class PlayerActivity : AppCompatActivity() {
         private const val CONTROLS_HIDE_DELAY_MS = 3500L
         private const val SEEK_OVERLAY_HIDE_DELAY_MS = 800L
         private const val INDICATOR_HIDE_DELAY_MS = 1200L
+
+        // PiP action constants
+        private const val PIP_ACTION = "com.ryzix.player.PIP_ACTION"
+        private const val PIP_EXTRA = "pip_action"
+        private const val PIP_PLAY_PAUSE = 1
+        private const val PIP_REWIND = 2
+        private const val PIP_FORWARD = 3
     }
 
     private lateinit var binding: ActivityPlayerBinding
@@ -91,6 +105,18 @@ class PlayerActivity : AppCompatActivity() {
             .withEndAction { binding.layoutBrightnessIndicator.visibility = View.GONE }.start()
         binding.layoutVolumeIndicator.animate().alpha(0f).setDuration(200)
             .withEndAction { binding.layoutVolumeIndicator.visibility = View.GONE }.start()
+    }
+
+    // PiP broadcast receiver — handles play/pause, rewind, forward from PiP overlay
+    private val pipReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.getIntExtra(PIP_EXTRA, 0)) {
+                PIP_PLAY_PAUSE -> player?.let { if (it.isPlaying) it.pause() else it.play() }
+                PIP_REWIND -> seek(-10_000L)
+                PIP_FORWARD -> seek(10_000L)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) updatePipActions()
+        }
     }
 
     // Seekbar position update
@@ -168,7 +194,10 @@ class PlayerActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onIsPlayingChanged(isPlaying: Boolean) = updatePlayPauseIcon()
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    updatePlayPauseIcon()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) updatePipActions()
+                }
 
                 override fun onVideoSizeChanged(videoSize: VideoSize) {
                     if (videoSize.width > 0 && videoSize.height > 0
@@ -276,12 +305,9 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        // Tap on player surface toggles controls
-        binding.playerView.setOnClickListener {
-            if (isLocked) return@setOnClickListener
-            if (binding.controlsContainer.visibility == View.VISIBLE) hideControls()
-            else showControls()
-        }
+        // NOTE: playerView has NO setOnClickListener here.
+        // Single-tap is handled exclusively by PlayerGestureListener.onSingleTapConfirmed
+        // to avoid double-firing (click + gesture both toggling controls).
     }
 
     // ─── GESTURES ────────────────────────────────────────────────────────────
@@ -306,7 +332,7 @@ class PlayerActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, gestureListener!!)
         var lastX = 0f
         var lastY = 0f
-        binding.playerView.setOnTouchListener { v, event ->
+        binding.playerView.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     gestureListener?.onTouchBegin(event)
@@ -322,7 +348,8 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             if (!isLocked) gestureDetector.onTouchEvent(event)
-            v.performClick()
+            // Do NOT call v.performClick() — it would fire a phantom click listener
+            // and double-trigger the controls toggle.
             true
         }
     }
@@ -375,11 +402,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun showControls() {
         if (isLocked) return
-        binding.controlsContainer.apply {
-            if (visibility == View.VISIBLE) return
-            alpha = 0f
-            visibility = View.VISIBLE
-            animate().alpha(1f).setDuration(200).start()
+        // Always reschedule hide timer, even if controls are already visible
+        if (binding.controlsContainer.visibility != View.VISIBLE) {
+            binding.controlsContainer.alpha = 0f
+            binding.controlsContainer.visibility = View.VISIBLE
+            binding.controlsContainer.animate().alpha(1f).setDuration(200).start()
         }
         scheduleHideControls()
     }
@@ -423,10 +450,54 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun enterPip() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val params = PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(16, 9))
-                .build()
-            enterPictureInPictureMode(params)
+            enterPictureInPictureMode(buildPipParams())
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun buildPipParams(): PictureInPictureParams {
+        val isPlaying = player?.isPlaying == true
+
+        fun makeAction(code: Int, iconRes: Int, label: String): RemoteAction {
+            val pi = PendingIntent.getBroadcast(
+                this, code,
+                Intent(PIP_ACTION).putExtra(PIP_EXTRA, code),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            return RemoteAction(Icon.createWithResource(this, iconRes), label, label, pi)
+        }
+
+        val actions = listOf(
+            makeAction(PIP_REWIND,     R.drawable.ic_rewind, "-10s"),
+            makeAction(PIP_PLAY_PAUSE,
+                if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play,
+                if (isPlaying) "Pause" else "Play"),
+            makeAction(PIP_FORWARD,    R.drawable.ic_forward, "+10s")
+        )
+
+        return PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+            .setActions(actions)
+            .build()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updatePipActions() {
+        if (isInPictureInPictureMode) {
+            setPictureInPictureParams(buildPipParams())
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPiPMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPiPMode, newConfig)
+        if (isInPiPMode) {
+            // Hide all overlays — PiP window shows only video + the RemoteAction buttons
+            binding.controlsContainer.visibility = View.GONE
+            binding.lockOverlay.visibility = View.GONE
+            cancelHideControls()
+        } else {
+            // Returning from PiP — restore controls if not locked
+            if (!isLocked) showControls()
         }
     }
 
@@ -471,10 +542,20 @@ class PlayerActivity : AppCompatActivity() {
 
     // ─── LIFECYCLE ───────────────────────────────────────────────────────────
 
+    override fun onStart() {
+        super.onStart()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(pipReceiver, IntentFilter(PIP_ACTION), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(pipReceiver, IntentFilter(PIP_ACTION))
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         player?.let { viewModel.savePosition(it.currentPosition) }
-        player?.pause()
+        if (!isInPictureInPictureMode) player?.pause()
     }
 
     override fun onStop() {
@@ -482,6 +563,7 @@ class PlayerActivity : AppCompatActivity() {
         controlsHandler.removeCallbacksAndMessages(null)
         seekOverlayHandler.removeCallbacksAndMessages(null)
         indicatorHandler.removeCallbacksAndMessages(null)
+        try { unregisterReceiver(pipReceiver) } catch (_: Exception) {}
     }
 
     override fun onDestroy() {
@@ -490,6 +572,7 @@ class PlayerActivity : AppCompatActivity() {
         player = null
     }
 
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
         saveAndFinish()
     }
