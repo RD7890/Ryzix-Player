@@ -18,7 +18,6 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import coil.load
-import coil.transform.BlurTransformation
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ryzix.player.R
 import com.ryzix.player.databinding.ActivityMusicPlayerBinding
@@ -146,9 +145,7 @@ class MusicPlayerActivity : AppCompatActivity() {
                 )
             }
             binding.imgBgArt.load(artUri) {
-                crossfade(true)
-                transformations(BlurTransformation(this@MusicPlayerActivity, 25f))
-            }
+                crossfade(true)            }
         } else {
             binding.imgAlbumArtFallback.visibility = View.VISIBLE
         }
