@@ -19,23 +19,25 @@ fun String.runCommand(workingDir: File = rootDir): String? = try {
         .takeIf { it.isNotEmpty() }
 } catch (_: Exception) { null }
 
+// versionCode = total commit count (always increments)
 val gitCommitCount: Int =
     "git rev-list --count HEAD".runCommand()?.toIntOrNull() ?: 1
 
-val gitVersionName: String =
-    "git describe --tags --always --dirty".runCommand() ?: "dev"
+// versionName = clean "1.0.<count>" — no alpha/beta/dirty/SHA noise
+val appVersionName: String = "1.0.$gitCommitCount"
 
 // ─── Keystore resolution ───────────────────────────────────────────────────
-// Priority: env var (CI) → committed keystore (local dev)
-val keystorePath: String? = System.getenv("KEYSTORE_FILE")
+// Variable names deliberately differ from the Gradle DSL property names
+// (storePassword / keyAlias / keyPassword) to avoid silent self-assignment.
+val ksFile: String? = System.getenv("KEYSTORE_FILE")
     ?.takeIf { file(it).exists() }
     ?: run {
-        val committed = file("signing/ryzix-signing.p12")
-        if (committed.exists()) committed.absolutePath else null
+        val local = file("signing/ryzix-signing.p12")
+        if (local.exists()) local.absolutePath else null
     }
-val keystorePassword: String = System.getenv("KEYSTORE_PASSWORD") ?: "ryzix1234"
-val keyAlias: String        = System.getenv("KEY_ALIAS")          ?: "ryzix-key"
-val keyPassword: String     = System.getenv("KEY_PASSWORD")        ?: "ryzix1234"
+val ksStorePass: String = System.getenv("KEYSTORE_PASSWORD") ?: "ryzix1234"
+val ksAlias: String     = System.getenv("KEY_ALIAS")         ?: "ryzix-key"
+val ksKeyPass: String   = System.getenv("KEY_PASSWORD")       ?: "ryzix1234"
 
 android {
     namespace = "com.ryzix.player"
@@ -46,7 +48,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = gitCommitCount
-        versionName = gitVersionName
+        versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
@@ -57,16 +59,14 @@ android {
     }
 
     signingConfigs {
-        // Single stable config used by both debug and release builds.
-        // This prevents "App not installed — package conflict" when sideloading
-        // because the same key is always used regardless of CI run.
+        // Single stable config used for both debug and release — same key
+        // every build so sideloaded updates never show "package conflict".
         create("stable") {
-            if (keystorePath != null) {
-                storeFile     = file(keystorePath)
-                storePassword = keystorePassword
-                keyAlias      = keyAlias
-                keyPassword   = keyPassword
-                // ryzix-signing.p12 is PKCS12; AGP 8+ auto-detects the format.
+            if (ksFile != null) {
+                storeFile     = file(ksFile)
+                storePassword = ksStorePass
+                keyAlias      = ksAlias
+                keyPassword   = ksKeyPass   // ksKeyPass ≠ "keyPassword" → no self-assignment
             }
         }
     }
@@ -76,20 +76,16 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix   = "-debug"
             isDebuggable        = true
-            if (keystorePath != null) {
-                signingConfig = signingConfigs.getByName("stable")
-            }
+            if (ksFile != null) signingConfig = signingConfigs.getByName("stable")
         }
         release {
-            isMinifyEnabled    = true
-            isShrinkResources  = true
+            isMinifyEnabled   = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (keystorePath != null) {
-                signingConfig = signingConfigs.getByName("stable")
-            }
+            if (ksFile != null) signingConfig = signingConfigs.getByName("stable")
         }
     }
 
@@ -103,8 +99,8 @@ android {
     }
 
     buildFeatures {
-        viewBinding  = true
-        buildConfig  = true
+        viewBinding = true
+        buildConfig = true
     }
 }
 
