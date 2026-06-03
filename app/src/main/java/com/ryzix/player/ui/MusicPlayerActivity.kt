@@ -1,11 +1,16 @@
 package com.ryzix.player.ui
 
+import android.Manifest
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.SeekBar
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -16,43 +21,50 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import coil.load
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.common.util.concurrent.ListenableFuture
 import com.ryzix.player.R
 import com.ryzix.player.databinding.ActivityMusicPlayerBinding
+import com.ryzix.player.service.PlayerService
 
 @OptIn(UnstableApi::class)
 class MusicPlayerActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_PLAYLIST_URIS     = "music_playlist_uris"
-        const val EXTRA_PLAYLIST_TITLES   = "music_playlist_titles"
-        const val EXTRA_PLAYLIST_ARTISTS  = "music_playlist_artists"
+        const val EXTRA_PLAYLIST_URIS      = "music_playlist_uris"
+        const val EXTRA_PLAYLIST_TITLES    = "music_playlist_titles"
+        const val EXTRA_PLAYLIST_ARTISTS   = "music_playlist_artists"
         const val EXTRA_PLAYLIST_ALBUM_IDS = "music_playlist_album_ids"
-        const val EXTRA_PLAYLIST_INDEX    = "music_playlist_index"
+        const val EXTRA_PLAYLIST_INDEX     = "music_playlist_index"
     }
 
     private lateinit var binding: ActivityMusicPlayerBinding
 
-    private var player: ExoPlayer? = null
+    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private var controller: MediaController? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    private var playlistUris:    List<String> = emptyList()
-    private var playlistTitles:  List<String> = emptyList()
-    private var playlistArtists: List<String> = emptyList()
+    private var playlistUris:     List<String> = emptyList()
+    private var playlistTitles:   List<String> = emptyList()
+    private var playlistArtists:  List<String> = emptyList()
     private var playlistAlbumIds: List<String> = emptyList()
-    private var currentIndex = 0
+    private var startIndex = 0
 
     private var isShuffle = false
     private var isRepeat  = false
     private var isSeekbarTracking = false
 
+    private val notifPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: notification shows anyway on grant */ }
+
     private val positionRunnable = object : Runnable {
         override fun run() {
-            val exo = player ?: return
+            val ctrl = controller ?: return
             if (!isSeekbarTracking) {
-                val pos = exo.currentPosition
+                val pos = ctrl.currentPosition
                 binding.seekBar.progress = pos.toInt()
                 binding.tvPosition.text  = formatMs(pos)
             }
@@ -71,65 +83,96 @@ class MusicPlayerActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        playlistUris     = intent.getStringArrayListExtra(EXTRA_PLAYLIST_URIS)    ?: emptyList()
-        playlistTitles   = intent.getStringArrayListExtra(EXTRA_PLAYLIST_TITLES)  ?: emptyList()
-        playlistArtists  = intent.getStringArrayListExtra(EXTRA_PLAYLIST_ARTISTS) ?: emptyList()
+        playlistUris     = intent.getStringArrayListExtra(EXTRA_PLAYLIST_URIS)     ?: emptyList()
+        playlistTitles   = intent.getStringArrayListExtra(EXTRA_PLAYLIST_TITLES)   ?: emptyList()
+        playlistArtists  = intent.getStringArrayListExtra(EXTRA_PLAYLIST_ARTISTS)  ?: emptyList()
         playlistAlbumIds = intent.getStringArrayListExtra(EXTRA_PLAYLIST_ALBUM_IDS) ?: emptyList()
-        currentIndex     = intent.getIntExtra(EXTRA_PLAYLIST_INDEX, 0)
+        startIndex       = intent.getIntExtra(EXTRA_PLAYLIST_INDEX, 0)
 
         if (playlistUris.isEmpty()) { finish(); return }
 
-        setupPlayer()
+        requestNotificationPermission()
+        connectToService()
         setupControls()
     }
 
-    private fun setupPlayer() {
-        player = ExoPlayer.Builder(this).build().also { exo ->
-
-            val items = playlistUris.mapIndexed { i, uriStr ->
-                val title   = playlistTitles.getOrElse(i)  { "" }
-                val artist  = playlistArtists.getOrElse(i) { "" }
-                val albumIdStr = playlistAlbumIds.getOrElse(i) { "" }
-                val artUri  = if (albumIdStr.isNotEmpty())
-                    Uri.parse("content://media/external/audio/albumart/$albumIdStr") else null
-                MediaItem.Builder()
-                    .setUri(uriStr)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(title)
-                            .setArtist(artist)
-                            .setArtworkUri(artUri)
-                            .build()
-                    ).build()
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-
-            exo.setMediaItems(items, currentIndex, 0L)
-            exo.prepare()
-            exo.playWhenReady = true
-
-            exo.addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    if (state == Player.STATE_READY) {
-                        binding.seekBar.max = exo.duration.toInt().coerceAtLeast(1)
-                        binding.tvDuration.text = formatMs(exo.duration)
-                        handler.post(positionRunnable)
-                    }
-                    updatePlayPauseIcon()
-                }
-                override fun onIsPlayingChanged(isPlaying: Boolean) = updatePlayPauseIcon()
-                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                    currentIndex = exo.currentMediaItemIndex
-                    updateTrackInfo()
-                }
-            })
         }
+    }
+
+    private fun connectToService() {
+        val sessionToken = SessionToken(
+            this,
+            ComponentName(this, PlayerService::class.java)
+        )
+        controllerFuture = MediaController.Builder(this, sessionToken)
+            .buildAsync()
+
+        controllerFuture!!.addListener({
+            try {
+                controller = controllerFuture!!.get()
+                onControllerReady()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                finish()
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun onControllerReady() {
+        val ctrl = controller ?: return
+
+        val items = playlistUris.mapIndexed { i, uriStr ->
+            val title      = playlistTitles.getOrElse(i)  { "" }
+            val artist     = playlistArtists.getOrElse(i) { "" }
+            val albumIdStr = playlistAlbumIds.getOrElse(i) { "" }
+            val artUri     = if (albumIdStr.isNotEmpty())
+                Uri.parse("content://media/external/audio/albumart/$albumIdStr") else null
+            MediaItem.Builder()
+                .setUri(uriStr)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(title)
+                        .setArtist(artist)
+                        .setArtworkUri(artUri)
+                        .build()
+                ).build()
+        }
+
+        ctrl.setMediaItems(items, startIndex, 0L)
+        ctrl.prepare()
+        ctrl.playWhenReady = true
+
+        ctrl.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_READY) {
+                    binding.seekBar.max = ctrl.duration.toInt().coerceAtLeast(1)
+                    binding.tvDuration.text = formatMs(ctrl.duration)
+                    handler.post(positionRunnable)
+                }
+                updatePlayPauseIcon()
+            }
+            override fun onIsPlayingChanged(isPlaying: Boolean) = updatePlayPauseIcon()
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                updateTrackInfo()
+            }
+        })
+
         updateTrackInfo()
     }
 
     private fun updateTrackInfo() {
-        val title   = playlistTitles.getOrElse(currentIndex)  { "Unknown" }
-        val artist  = playlistArtists.getOrElse(currentIndex) { "Unknown Artist" }
-        val albumIdStr = playlistAlbumIds.getOrElse(currentIndex) { "" }
+        val ctrl = controller ?: return
+        val idx = ctrl.currentMediaItemIndex
+
+        val title      = playlistTitles.getOrElse(idx)   { "Unknown" }
+        val artist     = playlistArtists.getOrElse(idx)  { "Unknown Artist" }
+        val albumIdStr = playlistAlbumIds.getOrElse(idx) { "" }
 
         binding.tvSongTitle.text  = title
         binding.tvArtistName.text = artist
@@ -144,8 +187,7 @@ class MusicPlayerActivity : AppCompatActivity() {
                     onError   = { _, _ -> binding.imgAlbumArtFallback.visibility = View.VISIBLE }
                 )
             }
-            binding.imgBgArt.load(artUri) {
-                crossfade(true)            }
+            binding.imgBgArt.load(artUri) { crossfade(true) }
         } else {
             binding.imgAlbumArtFallback.visibility = View.VISIBLE
         }
@@ -159,18 +201,16 @@ class MusicPlayerActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         binding.btnPlayPause.setOnClickListener {
-            player?.let { if (it.isPlaying) it.pause() else it.play() }
+            controller?.let { if (it.isPlaying) it.pause() else it.play() }
         }
 
         binding.btnNext.setOnClickListener {
-            player?.let {
-                if (it.hasNextMediaItem()) it.seekToNextMediaItem()
-            }
+            controller?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() }
         }
 
         binding.btnPrevious.setOnClickListener {
-            player?.let {
-                if ((it.currentPosition < 3_000L) && it.hasPreviousMediaItem()) {
+            controller?.let {
+                if (it.currentPosition < 3_000L && it.hasPreviousMediaItem()) {
                     it.seekToPreviousMediaItem()
                 } else {
                     it.seekTo(0L)
@@ -180,13 +220,13 @@ class MusicPlayerActivity : AppCompatActivity() {
 
         binding.btnShuffle.setOnClickListener {
             isShuffle = !isShuffle
-            player?.shuffleModeEnabled = isShuffle
+            controller?.shuffleModeEnabled = isShuffle
             binding.btnShuffle.alpha = if (isShuffle) 1.0f else 0.4f
         }
 
         binding.btnRepeat.setOnClickListener {
             isRepeat = !isRepeat
-            player?.repeatMode = if (isRepeat) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+            controller?.repeatMode = if (isRepeat) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
             binding.btnRepeat.alpha = if (isRepeat) 1.0f else 0.4f
         }
 
@@ -203,7 +243,8 @@ class MusicPlayerActivity : AppCompatActivity() {
         }
 
         binding.btnMoreOptions.setOnClickListener {
-            val title = playlistTitles.getOrElse(currentIndex) { "Track" }
+            val idx   = controller?.currentMediaItemIndex ?: 0
+            val title = playlistTitles.getOrElse(idx) { "Track" }
             MaterialAlertDialogBuilder(this)
                 .setTitle(title)
                 .setItems(arrayOf("Share", "Info")) { _, _ -> }
@@ -217,14 +258,14 @@ class MusicPlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(sb: SeekBar) { isSeekbarTracking = true }
             override fun onStopTrackingTouch(sb: SeekBar) {
                 isSeekbarTracking = false
-                player?.seekTo(sb.progress.toLong())
+                controller?.seekTo(sb.progress.toLong())
             }
         })
     }
 
     private fun updatePlayPauseIcon() {
         binding.btnPlayPause.setImageResource(
-            if (player?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play
+            if (controller?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play
         )
     }
 
@@ -241,10 +282,10 @@ class MusicPlayerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         handler.removeCallbacks(positionRunnable)
-        player?.release()
-        player = null
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        controller = null
+        super.onDestroy()
     }
 
     @Suppress("DEPRECATION")
