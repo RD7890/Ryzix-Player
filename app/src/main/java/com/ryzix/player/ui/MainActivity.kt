@@ -34,29 +34,30 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var videosFragment: VideosFragment
     private lateinit var musicFragment: MusicFragment
-    private lateinit var foldersFragment: FoldersFragment
+    private lateinit var onlineFragment: FoldersFragment
 
     private var isSearchVisible = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
-        if (perms.values.any { it }) {
-            viewModel.loadVideos()
-        } else {
-            Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show()
-        }
+        if (perms.values.any { it }) viewModel.loadVideos()
+        else Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        // Read saved theme BEFORE super.onCreate so the correct theme is applied
+        val themeMode = getSharedPreferences("ryzix_prefs", MODE_PRIVATE)
+            .getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(themeMode)
+
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        videosFragment  = VideosFragment()
-        musicFragment   = MusicFragment()
-        foldersFragment = FoldersFragment()
+        videosFragment = VideosFragment()
+        musicFragment  = MusicFragment()
+        onlineFragment = FoldersFragment()
 
         setupViewPager()
         setupBottomNav()
@@ -77,12 +78,17 @@ class MainActivity : AppCompatActivity() {
                 val navId = when (position) {
                     0 -> R.id.nav_local
                     1 -> R.id.nav_music
-                    2 -> R.id.nav_folders
+                    2 -> R.id.nav_online
                     else -> R.id.nav_local
                 }
                 if (binding.bottomNav.selectedItemId != navId) {
                     binding.bottomNav.selectedItemId = navId
                 }
+                // Hide search/sort on the Online tab; restore on others
+                val showControls = position != 2
+                binding.btnSearch.visibility = if (showControls) View.VISIBLE else View.GONE
+                binding.btnSort.visibility   = if (showControls) View.VISIBLE else View.GONE
+                if (position == 2 && isSearchVisible) toggleSearch(false)
             }
         })
     }
@@ -92,7 +98,7 @@ class MainActivity : AppCompatActivity() {
         override fun createFragment(position: Int): Fragment = when (position) {
             0 -> videosFragment
             1 -> musicFragment
-            2 -> foldersFragment
+            2 -> onlineFragment
             else -> videosFragment
         }
     }
@@ -112,14 +118,13 @@ class MainActivity : AppCompatActivity() {
                     updateSearchHint(getString(R.string.search_music_hint))
                     true
                 }
-                R.id.nav_folders -> {
+                R.id.nav_online -> {
                     binding.viewPager.setCurrentItem(2, true)
-                    updateSearchHint(getString(R.string.search_hint))
                     true
                 }
                 R.id.nav_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
-                    false // don't select settings tab in nav
+                    false
                 }
                 else -> false
             }
@@ -147,11 +152,9 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(e: Editable?) {
                 val query = e?.toString()?.trim() ?: ""
                 binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-
                 when (binding.viewPager.currentItem) {
                     0 -> viewModel.setSearchQuery(query)
                     1 -> musicFragment.filterMusic(query)
-                    else -> { /* folders don't search */ }
                 }
             }
         })
@@ -159,15 +162,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleSearch(show: Boolean) {
         isSearchVisible = show
-        binding.layoutSearchBar.visibility = if (show) View.VISIBLE else View.GONE
         if (show) {
+            binding.layoutSearchBar.visibility = View.VISIBLE
+            binding.layoutSearchBar.alpha = 0f
+            binding.layoutSearchBar.translationY = -24f
+            binding.layoutSearchBar.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220)
+                .start()
             binding.etSearch.requestFocus()
-            val imm = getSystemService(InputMethodManager::class.java)
-            imm?.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT)
+            getSystemService(InputMethodManager::class.java)
+                ?.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT)
         } else {
+            binding.layoutSearchBar.animate()
+                .alpha(0f)
+                .translationY(-24f)
+                .setDuration(180)
+                .withEndAction { binding.layoutSearchBar.visibility = View.GONE }
+                .start()
             binding.etSearch.text?.clear()
-            val imm = getSystemService(InputMethodManager::class.java)
-            imm?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+            getSystemService(InputMethodManager::class.java)
+                ?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
             binding.etSearch.clearFocus()
         }
     }
@@ -205,8 +221,7 @@ class MainActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.READ_MEDIA_VIDEO)
                 add(Manifest.permission.READ_MEDIA_AUDIO)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    add(Manifest.permission.POST_NOTIFICATIONS)
+                add(Manifest.permission.POST_NOTIFICATIONS)
             } else {
                 add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }

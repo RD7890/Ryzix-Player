@@ -1,45 +1,352 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<ScrollView
   xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
-  android:background="@color/background">
+  android:background="@color/background"
+  android:fillViewport="true">
 
   <LinearLayout
-    android:id="@+id/layoutEmpty"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:gravity="center"
     android:orientation="vertical"
-    android:paddingHorizontal="40dp"
-    android:visibility="gone">
+    android:paddingBottom="100dp">
 
-    <ImageView
-      android:layout_width="72dp"
-      android:layout_height="72dp"
-      android:src="@drawable/ic_nav_folders"
-      android:tint="@color/on_surface_variant"
-      android:alpha="0.3"/>
+    <!-- ── Hero gradient header ─────────────────────────────────────── -->
+    <FrameLayout
+      android:layout_width="match_parent"
+      android:layout_height="220dp">
 
+      <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_gradient_top"/>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingBottom="8dp">
+
+        <ImageView
+          android:layout_width="64dp"
+          android:layout_height="64dp"
+          android:src="@drawable/ic_network"
+          android:tint="#FFFFFFFF"
+          android:alpha="0.92"/>
+
+        <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="14dp"
+          android:text="Online Player"
+          android:textColor="#FFFFFFFF"
+          android:textSize="28sp"
+          android:textStyle="bold"
+          android:letterSpacing="0.02"/>
+
+        <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="10dp"
+          android:background="#40FFFFFF"
+          android:paddingHorizontal="16dp"
+          android:paddingVertical="5dp"
+          android:text="COMING SOON"
+          android:textColor="#FFFFFFFF"
+          android:textSize="11sp"
+          android:textStyle="bold"
+          android:letterSpacing="0.14"/>
+
+      </LinearLayout>
+    </FrameLayout>
+
+    <!-- ── Section label ─────────────────────────────────────────────── -->
     <TextView
-      android:id="@+id/tvEmpty"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginTop="16dp"
-      android:text="@string/no_folders"
-      android:textColor="@color/on_surface_variant"
-      android:textSize="16sp"/>
+      android:layout_marginStart="20dp"
+      android:layout_marginTop="24dp"
+      android:layout_marginBottom="12dp"
+      android:text="UPCOMING FEATURES"
+      android:textColor="@color/accent"
+      android:textSize="11sp"
+      android:textStyle="bold"
+      android:letterSpacing="0.10"/>
+
+    <!-- ── Feature 1: YouTube Music ──────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      android:layout_marginBottom="10dp"
+      android:alpha="0.60"
+      app:cardBackgroundColor="@color/card_bg"
+      app:cardCornerRadius="14dp"
+      app:cardElevation="0dp"
+      app:strokeColor="@color/card_stroke"
+      app:strokeWidth="1dp">
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+          android:layout_width="42dp"
+          android:layout_height="42dp"
+          android:src="@drawable/ic_nav_music"
+          android:background="@drawable/bg_folder_icon"
+          android:tint="@color/accent"
+          android:padding="9dp"/>
+
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:layout_marginStart="14dp"
+          android:orientation="vertical">
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="YouTube Music"
+            android:textColor="@color/on_surface"
+            android:textSize="15sp"
+            android:textStyle="bold"/>
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Stream music videos as audio"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="12sp"/>
+
+        </LinearLayout>
+
+        <ImageView
+          android:layout_width="20dp"
+          android:layout_height="20dp"
+          android:src="@drawable/ic_lock"
+          android:tint="@color/on_surface_variant"
+          android:alpha="0.6"/>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Feature 2: Song Discovery ─────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      android:layout_marginBottom="10dp"
+      android:alpha="0.60"
+      app:cardBackgroundColor="@color/card_bg"
+      app:cardCornerRadius="14dp"
+      app:cardElevation="0dp"
+      app:strokeColor="@color/card_stroke"
+      app:strokeWidth="1dp">
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+          android:layout_width="42dp"
+          android:layout_height="42dp"
+          android:src="@drawable/ic_search"
+          android:background="@drawable/bg_folder_icon"
+          android:tint="@color/accent"
+          android:padding="9dp"/>
+
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:layout_marginStart="14dp"
+          android:orientation="vertical">
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Song Discovery"
+            android:textColor="@color/on_surface"
+            android:textSize="15sp"
+            android:textStyle="bold"/>
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Explore tracks by mood and genre"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="12sp"/>
+
+        </LinearLayout>
+
+        <ImageView
+          android:layout_width="20dp"
+          android:layout_height="20dp"
+          android:src="@drawable/ic_lock"
+          android:tint="@color/on_surface_variant"
+          android:alpha="0.6"/>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Feature 3: Playlist Sync ──────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      android:layout_marginBottom="10dp"
+      android:alpha="0.60"
+      app:cardBackgroundColor="@color/card_bg"
+      app:cardCornerRadius="14dp"
+      app:cardElevation="0dp"
+      app:strokeColor="@color/card_stroke"
+      app:strokeWidth="1dp">
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+          android:layout_width="42dp"
+          android:layout_height="42dp"
+          android:src="@drawable/ic_play"
+          android:background="@drawable/bg_folder_icon"
+          android:tint="@color/accent"
+          android:padding="9dp"/>
+
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:layout_marginStart="14dp"
+          android:orientation="vertical">
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Playlist Sync"
+            android:textColor="@color/on_surface"
+            android:textSize="15sp"
+            android:textStyle="bold"/>
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Import playlists from Spotify and more"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="12sp"/>
+
+        </LinearLayout>
+
+        <ImageView
+          android:layout_width="20dp"
+          android:layout_height="20dp"
+          android:src="@drawable/ic_lock"
+          android:tint="@color/on_surface_variant"
+          android:alpha="0.6"/>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Feature 4: Radio Stations ─────────────────────────────────── -->
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      android:layout_marginBottom="10dp"
+      android:alpha="0.60"
+      app:cardBackgroundColor="@color/card_bg"
+      app:cardCornerRadius="14dp"
+      app:cardElevation="0dp"
+      app:strokeColor="@color/card_stroke"
+      app:strokeWidth="1dp">
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+          android:layout_width="42dp"
+          android:layout_height="42dp"
+          android:src="@drawable/ic_volume"
+          android:background="@drawable/bg_folder_icon"
+          android:tint="@color/accent"
+          android:padding="9dp"/>
+
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:layout_marginStart="14dp"
+          android:orientation="vertical">
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Live Radio"
+            android:textColor="@color/on_surface"
+            android:textSize="15sp"
+            android:textStyle="bold"/>
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Thousands of free online radio stations"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="12sp"/>
+
+        </LinearLayout>
+
+        <ImageView
+          android:layout_width="20dp"
+          android:layout_height="20dp"
+          android:src="@drawable/ic_lock"
+          android:tint="@color/on_surface_variant"
+          android:alpha="0.6"/>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Notify Me button ───────────────────────────────────────────── -->
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center"
+      android:layout_marginTop="28dp">
+
+      <Button
+        android:id="@+id/btnNotifyMe"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:paddingHorizontal="32dp"
+        android:text="Notify Me When Live"
+        android:textSize="14sp"
+        android:textAllCaps="false"
+        android:backgroundTint="@color/accent"/>
+
+    </LinearLayout>
 
   </LinearLayout>
 
-  <androidx.recyclerview.widget.RecyclerView
-    android:id="@+id/rvFolders"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:clipToPadding="false"
-    android:paddingTop="6dp"
-    android:paddingBottom="88dp"
-    android:scrollbarStyle="outsideOverlay"/>
-
-</FrameLayout>
+</ScrollView>
