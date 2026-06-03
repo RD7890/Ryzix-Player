@@ -3,7 +3,7 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="140dp"
-  android:layout_height="100dp"
+  android:layout_height="match_parent"
   android:layout_marginStart="4dp"
   android:layout_marginEnd="4dp"
   app:cardBackgroundColor="@color/card_bg"
@@ -23,7 +23,6 @@
       android:layout_height="match_parent"
       android:scaleType="centerCrop"/>
 
-    <!-- dark gradient overlay -->
     <View
       android:layout_width="match_parent"
       android:layout_height="match_parent"
@@ -43,7 +42,6 @@
       android:textStyle="bold"
       android:lineSpacingMultiplier="1.1"/>
 
-    <!-- Resume progress -->
     <ProgressBar
       android:id="@+id/progressResume"
       style="?android:attr/progressBarStyleHorizontal"

@@ -7,11 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.ryzix.player.adapter.HistoryCarouselAdapter
 import com.ryzix.player.adapter.VideoAdapter
-import com.ryzix.player.adapter.VideoSectionHeaderAdapter
 import com.ryzix.player.databinding.FragmentVideosBinding
+import com.ryzix.player.db.WatchHistory
 import com.ryzix.player.model.VideoItem
 import com.ryzix.player.ui.PlayerActivity
 import com.ryzix.player.viewmodel.MediaViewModel
@@ -23,8 +23,10 @@ class VideosFragment : Fragment() {
     private val viewModel: MediaViewModel by activityViewModels()
 
     private lateinit var videoAdapter: VideoAdapter
-    private lateinit var sectionHeaderAdapter: VideoSectionHeaderAdapter
+    private lateinit var carouselAdapter: HistoryCarouselAdapter
+
     private var currentVideos: List<VideoItem> = emptyList()
+    private var allHistory: List<Pair<WatchHistory, VideoItem>> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -35,19 +37,30 @@ class VideosFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupRecyclerView()
+        setupCarousel()
+        setupVideoList()
         setupObservers()
+        setupSeeAll()
     }
 
-    private fun setupRecyclerView() {
-        sectionHeaderAdapter = VideoSectionHeaderAdapter(
-            onHistoryItemClick = { history, video ->
-                openPlayer(video, currentVideos,
-                    currentVideos.indexOfFirst { it.path == video.path }.coerceAtLeast(0),
-                    resumeMs = history.lastPosition)
-            }
-        )
+    // ── Carousel — completely separate RecyclerView, no nesting ──────────────
 
+    private fun setupCarousel() {
+        carouselAdapter = HistoryCarouselAdapter { history, video ->
+            val idx = currentVideos.indexOfFirst { it.path == video.path }.coerceAtLeast(0)
+            openPlayer(video, currentVideos, idx, resumeMs = history.lastPosition)
+        }
+
+        binding.rvHistoryCarousel.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = carouselAdapter
+            setHasFixedSize(true)
+        }
+    }
+
+    // ── Video list ────────────────────────────────────────────────────────────
+
+    private fun setupVideoList() {
         videoAdapter = VideoAdapter(
             onVideoClick = { video ->
                 val idx = currentVideos.indexOf(video).coerceAtLeast(0)
@@ -56,24 +69,40 @@ class VideosFragment : Fragment() {
             onVideoLongClick = { video -> showVideoOptions(video) }
         )
 
-        val concatAdapter = ConcatAdapter(
-            ConcatAdapter.Config.Builder().setIsolateViewTypes(true).build(),
-            sectionHeaderAdapter,
-            videoAdapter
-        )
-
         binding.rvVideos.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = concatAdapter
+            adapter = videoAdapter
             setHasFixedSize(false)
         }
     }
+
+    // ── See All history ───────────────────────────────────────────────────────
+
+    private fun setupSeeAll() {
+        binding.tvSeeAll.setOnClickListener {
+            if (allHistory.isEmpty()) return@setOnClickListener
+            // Build title list for dialog
+            val titles = allHistory.map { (h, _) -> h.title.substringBeforeLast(".") }
+                .toTypedArray()
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Recent — ${titles.size} videos")
+                .setItems(titles) { _, idx ->
+                    val (history, video) = allHistory[idx]
+                    val playIdx = currentVideos.indexOfFirst { it.path == video.path }.coerceAtLeast(0)
+                    openPlayer(video, currentVideos, playIdx, resumeMs = history.lastPosition)
+                }
+                .setNegativeButton("Close", null)
+                .show()
+        }
+    }
+
+    // ── Observers ─────────────────────────────────────────────────────────────
 
     private fun setupObservers() {
         viewModel.filteredVideos.observe(viewLifecycleOwner) { videos ->
             currentVideos = videos
             videoAdapter.submitList(videos)
-            sectionHeaderAdapter.setVideoCount(videos.size)
+            binding.tvVideoCount.text = if (videos.isEmpty()) "Videos" else "${videos.size} Videos"
             updateEmptyState(videos.isEmpty() && viewModel.isLoading.value != true)
         }
 
@@ -83,10 +112,13 @@ class VideosFragment : Fragment() {
 
         viewModel.recentHistory.observe(viewLifecycleOwner) { history ->
             val videos = viewModel.allVideos.value ?: emptyList()
-            val pairs = history
-                .mapNotNull { h -> videos.find { it.path == h.videoPath }?.let { v -> Pair(h, v) } }
-                .take(12)
-            sectionHeaderAdapter.setHistoryItems(pairs)
+            val pairs = history.mapNotNull { h ->
+                videos.find { it.path == h.videoPath }?.let { v -> Pair(h, v) }
+            }
+            allHistory = pairs
+            val carouselItems = pairs.take(20)
+            carouselAdapter.submitList(carouselItems)
+            binding.sectionRecent.visibility = if (carouselItems.isEmpty()) View.GONE else View.VISIBLE
         }
 
         viewModel.searchQuery.observe(viewLifecycleOwner) { query ->
@@ -120,43 +152,31 @@ class VideosFragment : Fragment() {
             putExtra(PlayerActivity.EXTRA_TITLE, video.displayName)
             putExtra(PlayerActivity.EXTRA_PATH,  video.path)
             putExtra(PlayerActivity.EXTRA_DURATION, video.duration)
-            if (playlist.isNotEmpty()) {
-                putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_URIS,
-                    ArrayList(playlist.map { it.uri.toString() }))
-                putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_TITLES,
-                    ArrayList(playlist.map { it.displayName }))
-                putExtra(PlayerActivity.EXTRA_PLAYLIST_INDEX, index)
-            }
-            if (resumeMs >= 0) putExtra(PlayerActivity.EXTRA_RESUME_MS, resumeMs)
+            if (resumeMs > 0) putExtra(PlayerActivity.EXTRA_RESUME_MS, resumeMs)
+            putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_URIS,
+                ArrayList(playlist.map { it.uri.toString() }))
+            putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_TITLES,
+                ArrayList(playlist.map { it.displayName }))
+            putExtra(PlayerActivity.EXTRA_PLAYLIST_INDEX, index)
         })
     }
 
     private fun showVideoOptions(video: VideoItem) {
-        val fragment = requireActivity()
-        val items = arrayOf("Play", "Share", "Remove from history")
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(fragment)
-            .setTitle(video.displayName.substringBeforeLast("."))
-            .setItems(items) { _, which ->
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(video.displayName)
+            .setItems(arrayOf("Play", "Share")) { _, which ->
                 when (which) {
                     0 -> openPlayer(video, currentVideos,
                             currentVideos.indexOf(video).coerceAtLeast(0))
-                    1 -> shareVideo(video)
-                    2 -> viewModel.deleteHistoryItem(video.path)
+                    1 -> {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "video/*"
+                            putExtra(Intent.EXTRA_STREAM, video.uri)
+                        }
+                        startActivity(Intent.createChooser(shareIntent, "Share via"))
+                    }
                 }
             }.show()
-    }
-
-    private fun shareVideo(video: VideoItem) {
-        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-            type = "video/*"
-            putExtra(Intent.EXTRA_STREAM, video.uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }, "Share via"))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.loadVideos()
     }
 
     override fun onDestroyView() {

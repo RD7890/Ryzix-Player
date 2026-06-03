@@ -16,7 +16,6 @@
     android:fitsSystemWindows="true"
     app:elevation="0dp">
 
-    <!-- Title row -->
     <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="64dp"
@@ -56,20 +55,9 @@
         android:padding="8dp"
         android:contentDescription="@string/action_sort"/>
 
-      <ImageButton
-        android:id="@+id/btnSettings"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_settings"
-        android:tint="@color/on_surface"
-        android:padding="8dp"
-        android:contentDescription="@string/action_settings"
-        android:visibility="gone"/>
-
     </LinearLayout>
 
-    <!-- Expandable search bar (hidden by default, shown on search icon tap) -->
+    <!-- Search bar (animated show/hide) -->
     <LinearLayout
       android:id="@+id/layoutSearchBar"
       android:layout_width="match_parent"
@@ -137,24 +125,109 @@
 
   </com.google.android.material.appbar.AppBarLayout>
 
-  <!-- ── ViewPager2 ───────────────────────────────────────────────────── -->
+  <!-- ── Content pager ───────────────────────────────────────────── -->
   <androidx.viewpager2.widget.ViewPager2
     android:id="@+id/viewPager"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
-  <!-- ── Bottom navigation ─────────────────────────────────────────────── -->
-  <com.google.android.material.bottomnavigation.BottomNavigationView
-    android:id="@+id/bottomNav"
+  <!-- ── Bottom chrome (mini-bar + nav) stacked at the bottom ──── -->
+  <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
-    android:background="@drawable/bg_glass_nav"
-    app:menu="@menu/bottom_nav_menu"
-    app:labelVisibilityMode="labeled"
-    app:itemIconTint="@color/bottom_nav_item_color"
-    app:itemTextColor="@color/bottom_nav_item_color"
-    app:elevation="0dp"/>
+    android:orientation="vertical">
+
+    <!-- Now-Playing mini bar (hidden until music plays) -->
+    <LinearLayout
+      android:id="@+id/layoutNowPlaying"
+      android:layout_width="match_parent"
+      android:layout_height="64dp"
+      android:background="@drawable/bg_glass_nav"
+      android:gravity="center_vertical"
+      android:orientation="horizontal"
+      android:paddingHorizontal="12dp"
+      android:visibility="gone">
+
+      <!-- Album art -->
+      <ImageView
+        android:id="@+id/imgNowPlayingArt"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_music_note"
+        android:background="@drawable/bg_music_art"
+        android:padding="2dp"/>
+
+      <!-- Title + artist -->
+      <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="12dp"
+        android:orientation="vertical">
+
+        <TextView
+          android:id="@+id/tvNowPlayingTitle"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:ellipsize="marquee"
+          android:marqueeRepeatLimit="marquee_forever"
+          android:singleLine="true"
+          android:text="Not playing"
+          android:textColor="@color/on_surface"
+          android:textSize="13sp"
+          android:textStyle="bold"/>
+
+        <TextView
+          android:id="@+id/tvNowPlayingArtist"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="2dp"
+          android:ellipsize="end"
+          android:maxLines="1"
+          android:textColor="@color/on_surface_variant"
+          android:textSize="11sp"/>
+
+      </LinearLayout>
+
+      <!-- Play / Pause -->
+      <ImageButton
+        android:id="@+id/btnNowPlayingPlayPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_play"
+        android:tint="@color/on_surface"
+        android:padding="8dp"
+        android:contentDescription="Play/Pause"/>
+
+      <!-- Next -->
+      <ImageButton
+        android:id="@+id/btnNowPlayingNext"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_skip_next"
+        android:tint="@color/on_surface"
+        android:padding="8dp"
+        android:contentDescription="Next"/>
+
+    </LinearLayout>
+
+    <!-- Bottom navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+      android:id="@+id/bottomNav"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="@drawable/bg_glass_nav"
+      app:menu="@menu/bottom_nav_menu"
+      app:labelVisibilityMode="labeled"
+      app:itemIconTint="@color/bottom_nav_item_color"
+      app:itemTextColor="@color/bottom_nav_item_color"
+      app:elevation="0dp"/>
+
+  </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

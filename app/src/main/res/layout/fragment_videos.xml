@@ -1,61 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<FrameLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   android:background="@color/background">
 
-  <FrameLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+  <!-- Loading spinner -->
+  <ProgressBar
+    android:id="@+id/progressBar"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:layout_gravity="center"
+    android:indeterminateTint="@color/accent"
+    android:visibility="gone"/>
 
-    <!-- Loading spinner -->
-    <ProgressBar
-      android:id="@+id/progressBar"
-      android:layout_width="36dp"
-      android:layout_height="36dp"
-      android:layout_gravity="center"
-      android:indeterminateTint="@color/accent"
-      android:visibility="gone"/>
+  <!-- Empty state -->
+  <LinearLayout
+    android:id="@+id/layoutEmpty"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="40dp"
+    android:visibility="gone">
 
-    <!-- Empty state -->
-    <LinearLayout
-      android:id="@+id/layoutEmpty"
+    <ImageView
+      android:layout_width="72dp"
+      android:layout_height="72dp"
+      android:src="@drawable/ic_nav_videos"
+      android:tint="@color/on_surface_variant"
+      android:alpha="0.3"/>
+
+    <TextView
+      android:id="@+id/tvEmpty"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_gravity="center"
-      android:gravity="center"
+      android:layout_marginTop="16dp"
+      android:text="@string/no_videos"
+      android:textColor="@color/on_surface_variant"
+      android:textSize="16sp"/>
+
+  </LinearLayout>
+
+  <!-- ── Main content: carousel section + video list ─────────── -->
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- ── Recent / History carousel (separate, isolated area) ─ -->
+    <LinearLayout
+      android:id="@+id/sectionRecent"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
       android:orientation="vertical"
-      android:paddingHorizontal="40dp"
       android:visibility="gone">
 
-      <ImageView
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:src="@drawable/ic_nav_videos"
-        android:tint="@color/on_surface_variant"
-        android:alpha="0.3"/>
-
-      <TextView
-        android:id="@+id/tvEmpty"
-        android:layout_width="wrap_content"
+      <!-- "Recent" label + "See All" -->
+      <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/no_videos"
-        android:textColor="@color/on_surface_variant"
-        android:textSize="16sp"/>
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/recent"
+          android:textColor="@color/on_surface"
+          android:textSize="16sp"
+          android:textStyle="bold"
+          android:letterSpacing="0.02"/>
+
+        <TextView
+          android:id="@+id/tvSeeAll"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="@string/see_all"
+          android:textColor="@color/accent"
+          android:textSize="13sp"
+          android:padding="4dp"/>
+
+      </LinearLayout>
+
+      <!-- Carousel — standalone, no nesting inside rvVideos -->
+      <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvHistoryCarousel"
+        android:layout_width="match_parent"
+        android:layout_height="152dp"
+        android:clipToPadding="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"/>
+
+      <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@color/divider"/>
 
     </LinearLayout>
 
-    <!-- Main content: history carousel + video list -->
+    <!-- ── All Videos header ──────────────────────────────────── -->
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_vertical"
+      android:orientation="horizontal"
+      android:paddingHorizontal="20dp"
+      android:paddingTop="14dp"
+      android:paddingBottom="8dp">
+
+      <TextView
+        android:id="@+id/tvVideoCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Videos"
+        android:textColor="@color/on_surface"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    </LinearLayout>
+
+    <!-- ── Video list — gets all remaining vertical space ─────── -->
     <androidx.recyclerview.widget.RecyclerView
       android:id="@+id/rvVideos"
       android:layout_width="match_parent"
-      android:layout_height="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
       android:clipToPadding="false"
-      android:paddingBottom="88dp"
+      android:paddingBottom="164dp"
       android:scrollbarStyle="outsideOverlay"/>
 
-  </FrameLayout>
+  </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

@@ -3,6 +3,7 @@ package com.ryzix.player.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -22,6 +23,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.ryzix.player.R
+import com.ryzix.player.ui.MusicPlayerActivity
 
 @OptIn(UnstableApi::class)
 class PlayerService : MediaSessionService() {
@@ -30,8 +32,8 @@ class PlayerService : MediaSessionService() {
     private var player: ExoPlayer? = null
 
     companion object {
-        const val CHANNEL_ID       = "ryzix_music_channel"
-        const val NOTIFICATION_ID  = 1001
+        const val CHANNEL_ID      = "ryzix_music_channel"
+        const val NOTIFICATION_ID = 1001
 
         val COMMAND_TOGGLE_SHUFFLE = SessionCommand("ryzix.TOGGLE_SHUFFLE", Bundle.EMPTY)
         val COMMAND_TOGGLE_REPEAT  = SessionCommand("ryzix.TOGGLE_REPEAT",  Bundle.EMPTY)
@@ -47,11 +49,19 @@ class PlayerService : MediaSessionService() {
             .build()
 
         player = ExoPlayer.Builder(this)
-            .setAudioAttributes(audioAttrs, /* handleAudioFocus= */ true)
+            .setAudioAttributes(audioAttrs, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
 
-        // Custom notification actions: Shuffle + Repeat shown in expanded view
+        // Stop service when playback ends naturally
+        player!!.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) {
+                    stopSelf()
+                }
+            }
+        })
+
         val shuffleBtn = CommandButton.Builder()
             .setDisplayName("Shuffle")
             .setSessionCommand(COMMAND_TOGGLE_SHUFFLE)
@@ -66,7 +76,17 @@ class PlayerService : MediaSessionService() {
             .setEnabled(true)
             .build()
 
+        // Tapping the notification opens MusicPlayerActivity
+        val tapIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MusicPlayerActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         mediaSession = MediaSession.Builder(this, player!!)
+            .setSessionActivity(tapIntent)
             .setCustomLayout(ImmutableList.of(shuffleBtn, repeatBtn))
             .setCallback(SessionCallbackHandler())
             .build()
@@ -82,12 +102,13 @@ class PlayerService : MediaSessionService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val p = mediaSession?.player ?: return
-        if (!p.playWhenReady
-            || p.mediaItemCount == 0
-            || p.playbackState == Player.STATE_ENDED) {
+        val p = mediaSession?.player ?: run { stopSelf(); return }
+        if (!p.playWhenReady || p.mediaItemCount == 0 || p.playbackState == Player.STATE_ENDED) {
+            // App removed from recents while paused / idle — dismiss notification + stop
+            p.stop()
             stopSelf()
         }
+        // Still playing → keep foreground service running
     }
 
     override fun onDestroy() {
@@ -100,21 +121,19 @@ class PlayerService : MediaSessionService() {
         super.onDestroy()
     }
 
-    // ── Session callback — handles custom commands from notification ───────
-
     private inner class SessionCallbackHandler : MediaSession.Callback {
 
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo
         ): MediaSession.ConnectionResult {
-            val sessionCmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS
+            val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS
                 .buildUpon()
                 .add(COMMAND_TOGGLE_SHUFFLE)
                 .add(COMMAND_TOGGLE_REPEAT)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                .setAvailableSessionCommands(sessionCmds)
+                .setAvailableSessionCommands(cmds)
                 .build()
         }
 
@@ -125,10 +144,9 @@ class PlayerService : MediaSessionService() {
             args: Bundle
         ): ListenableFuture<SessionResult> {
             when (customCommand.customAction) {
-                COMMAND_TOGGLE_SHUFFLE.customAction -> {
+                COMMAND_TOGGLE_SHUFFLE.customAction ->
                     player?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled }
-                }
-                COMMAND_TOGGLE_REPEAT.customAction -> {
+                COMMAND_TOGGLE_REPEAT.customAction ->
                     player?.let {
                         it.repeatMode = when (it.repeatMode) {
                             Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
@@ -136,14 +154,11 @@ class PlayerService : MediaSessionService() {
                             else                   -> Player.REPEAT_MODE_OFF
                         }
                     }
-                }
                 else -> return super.onCustomCommand(session, controller, customCommand, args)
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
     }
-
-    // ── Notification channel ──────────────────────────────────────────────
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -156,8 +171,7 @@ class PlayerService : MediaSessionService() {
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 setShowBadge(false)
             }
-            getSystemService(NotificationManager::class.java)
-                ?.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
         }
     }
 }

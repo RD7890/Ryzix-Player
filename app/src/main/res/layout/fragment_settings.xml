@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/background"
+  android:fillViewport="true">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="180dp">
+
+    <!-- Title -->
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp"
+      android:paddingTop="20dp"
+      android:paddingBottom="4dp"
+      android:text="Settings"
+      android:textColor="@color/on_surface"
+      android:textSize="22sp"
+      android:textStyle="bold"
+      android:letterSpacing="0.02"/>
+
+    <!-- ── Appearance ──────────────────────────────── -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp" android:paddingTop="24dp" android:paddingBottom="8dp"
+      android:text="@string/section_appearance" android:textColor="@color/accent"
+      android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      app:cardBackgroundColor="@color/card_bg" app:cardCornerRadius="16dp"
+      app:cardElevation="0dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout android:id="@+id/itemTheme" android:layout_width="match_parent"
+          android:layout_height="64dp" android:background="?attr/selectableItemBackground"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_palette" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/theme" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:id="@+id/tvThemeValue" android:layout_width="wrap_content"
+              android:layout_height="wrap_content" android:layout_marginTop="2dp"
+              android:text="@string/theme_system" android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+          <ImageView android:layout_width="18dp" android:layout_height="18dp"
+            android:src="@drawable/ic_chevron_right" android:tint="@color/on_surface_variant" android:alpha="0.5"/>
+        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+          android:layout_marginStart="56dp" android:background="@color/divider"/>
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Playback ────────────────────────────────── -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp" android:paddingTop="24dp" android:paddingBottom="8dp"
+      android:text="@string/section_playback" android:textColor="@color/accent"
+      android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      app:cardBackgroundColor="@color/card_bg" app:cardCornerRadius="16dp"
+      app:cardElevation="0dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Resume playback -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_playback" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/resume_playback" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:layout_marginTop="2dp" android:text="@string/resume_playback_desc"
+              android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+          <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchResume" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:checked="true"/>
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+          android:layout_marginStart="56dp" android:background="@color/divider"/>
+
+        <!-- Background play -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_nav_music" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/background_play" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:layout_marginTop="2dp" android:text="@string/background_play_desc"
+              android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+          <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchBackground" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:checked="true"/>
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+          android:layout_marginStart="56dp" android:background="@color/divider"/>
+
+        <!-- Hardware decode -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_storage" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/hardware_decode" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:layout_marginTop="2dp" android:text="@string/hardware_decode_desc"
+              android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+          <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchHardware" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:checked="true"/>
+        </LinearLayout>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Audio ──────────────────────────────────── -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp" android:paddingTop="24dp" android:paddingBottom="8dp"
+      android:text="@string/section_audio" android:textColor="@color/accent"
+      android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      app:cardBackgroundColor="@color/card_bg" app:cardCornerRadius="16dp"
+      app:cardElevation="0dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="12dp">
+
+        <!-- Bass boost -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+          android:gravity="center_vertical" android:orientation="horizontal"
+          android:paddingHorizontal="16dp" android:paddingTop="16dp" android:paddingBottom="4dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_bass" android:tint="@color/on_surface_variant"/>
+          <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1"
+            android:text="@string/bass_boost" android:textColor="@color/on_surface" android:textSize="15sp"/>
+          <TextView android:id="@+id/tvBassValue" android:layout_width="36dp"
+            android:layout_height="wrap_content" android:gravity="end"
+            android:text="0" android:textColor="@color/accent" android:textSize="13sp"/>
+        </LinearLayout>
+        <SeekBar android:id="@+id/seekBass" android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_marginHorizontal="16dp"
+          android:max="100" style="@style/SeekBar.Equalizer"/>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+          android:layout_marginHorizontal="16dp" android:layout_marginTop="12dp"
+          android:background="@color/divider"/>
+
+        <!-- Amplifier -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+          android:gravity="center_vertical" android:orientation="horizontal"
+          android:paddingHorizontal="16dp" android:paddingTop="16dp" android:paddingBottom="4dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_amplifier" android:tint="@color/on_surface_variant"/>
+          <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1"
+            android:text="@string/amplifier" android:textColor="@color/on_surface" android:textSize="15sp"/>
+          <TextView android:id="@+id/tvAmpValue" android:layout_width="42dp"
+            android:layout_height="wrap_content" android:gravity="end"
+            android:text="0 dB" android:textColor="@color/accent" android:textSize="13sp"/>
+        </LinearLayout>
+        <SeekBar android:id="@+id/seekAmplifier" android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_marginHorizontal="16dp"
+          android:max="20" style="@style/SeekBar.Equalizer"/>
+
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── Storage ────────────────────────────────── -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp" android:paddingTop="24dp" android:paddingBottom="8dp"
+      android:text="@string/section_storage" android:textColor="@color/accent"
+      android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      app:cardBackgroundColor="@color/card_bg" app:cardCornerRadius="16dp"
+      app:cardElevation="0dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout android:id="@+id/itemClearHistory" android:layout_width="match_parent"
+          android:layout_height="64dp" android:background="?attr/selectableItemBackground"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_history" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/clear_history" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:layout_marginTop="2dp" android:text="@string/clear_history_desc"
+              android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+          <ImageView android:layout_width="18dp" android:layout_height="18dp"
+            android:src="@drawable/ic_chevron_right" android:tint="@color/on_surface_variant" android:alpha="0.5"/>
+        </LinearLayout>
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ── About ──────────────────────────────────── -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:paddingHorizontal="20dp" android:paddingTop="24dp" android:paddingBottom="8dp"
+      android:text="@string/section_about" android:textColor="@color/accent"
+      android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+    <com.google.android.material.card.MaterialCardView
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginHorizontal="12dp"
+      app:cardBackgroundColor="@color/card_bg" app:cardCornerRadius="16dp"
+      app:cardElevation="0dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp"
+          android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="16dp">
+          <ImageView android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_info" android:tint="@color/on_surface_variant"/>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="@string/about" android:textColor="@color/on_surface" android:textSize="15sp"/>
+            <TextView android:id="@+id/tvVersionName" android:layout_width="wrap_content"
+              android:layout_height="wrap_content" android:layout_marginTop="2dp"
+              android:text="Version 1.0" android:textColor="@color/on_surface_variant" android:textSize="12sp"/>
+          </LinearLayout>
+        </LinearLayout>
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+  </LinearLayout>
+
+</ScrollView>
